@@ -1,0 +1,357 @@
+/* Home style sheet start */
+/* Hex codes:
+ * background grey: 535252
+ * dark grey : 252424
+ * light grey: 727171
+ * lighest grey: 8f8f8f
+ */
+
+ div.fullscreen {
+    display:block;
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+}
+
+.music_container {
+    height: 100%;
+    width: 100%;
+    background-color: #535252;
+    font-size: 0px;
+}
+
+.status_bar {
+    height: 30px;
+    background-color: #252424;
+    z-index: 100;
+}
+
+.controlls_container {
+    height: 120px;
+}
+
+.player_container {
+    display: inline-block;
+    padding: 10px;
+    margin-left: 50px;
+}
+
+.large_play_button {
+    width: 70px;
+    height: 70px;
+    border: 1px solid #252424;
+    display: inline-block;
+}
+
+.music_button {
+
+}
+
+.music_button:hover {
+    background-color: #727171;
+    cursor: pointer;
+}
+.play_triangle {
+    margin-left: 25px;
+    margin-top: 14px;
+    width: 0;
+    height: 0;
+    border-left: 27px solid #252424;
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+}
+
+.player_playing_container {
+    color: #252424;
+    font-size: 16px;
+    font-family: sans-serif;
+    display: inline-block;
+    vertical-align: top;
+    margin-top: 6px;
+    margin-left: 10px;
+}
+
+.player_playing_title_container {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+
+.player_playing_title {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    text-align: right;
+}
+
+.player_playing_content_container {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+
+.player_playing_content {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.player_bottom {
+    margin-top: 5px;
+}
+
+.player_prev_button,
+.player_next_button {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #252424;
+    display: inline-block;
+}
+
+.player_prev_triangle_left {
+    margin-top: 5px;
+    margin-left: 5px;
+    width: 0;
+    height: 0;
+    border-right: 5px solid #252424;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    display: inline-block;
+}
+
+.player_prev_triangle_right {
+    margin-top: 5px;
+    width: 0;
+    height: 0;
+    border-right: 5px solid #252424;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    display: inline-block;
+}
+
+.player_next_triangle_left {
+    margin-top: 5px;
+    margin-left: 5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid #252424;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    display: inline-block;
+}
+
+.player_next_triangle_right {
+    margin-top: 5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid #252424;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    display: inline-block;
+}
+
+.player_status_container {
+    display: inline-block;
+    height: 20px;
+    position: relative;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.player_status_bar {
+    height: 8px;
+    width: 300px;
+    margin-top: 5px;
+    border: 1px solid #252424;
+    display: inline-block;
+}
+
+.player_status_bar_progress {
+    background-color: #727171;
+    height: 100%;
+    width: 50%;
+}
+
+.player_status_seeker {
+    height: 12px;
+    width: 35px;
+    border: 1px solid #252424;
+    background-color: #8f8f8f;
+    position: absolute;
+    top: 3px;
+    left: 40px;
+}
+
+.explorer_container {
+    width: 100%;
+}
+
+.explorer_left_container,
+.explorer_right_container {
+
+}
+
+.explorer_side_bar_container {
+    width: 200px;
+}
+
+.explorer_content_container {
+}
+
+.status_bar_left {
+    border-right: 1px solid #535252;
+}
+
+.status_bar_center {
+    border-right: 1px solid #535252;
+    border-left: 1px solid #535252;
+}
+
+.status_bar_right {
+    border-left: 1px solid #535252;
+}
+
+.explorer_side_bar {
+   border: 1px solid #252424;
+   /*padding: 5px;*/
+}
+
+.explorer_content {
+   border: 1px solid #252424;
+}
+
+.side_bar_item {
+    /*padding-left: 5px;*/
+}
+
+.side_bar_item_child {
+    padding-left: 10px;
+}
+
+.explorer_text {
+    color: #252424;
+    font-size: 16px;
+    font-family: sans-serif;
+    padding: 0 4px 0 4px;
+}
+
+.explorer_item {
+    border: 1px solid #252424;
+    position: relative;
+}
+
+.explorer_item_child {
+    border: 1px solid #252424;
+    margin-left: 10px;
+}
+
+.explorer_item_header {
+    background-color: #252424;
+    border: 1px solid #252424;
+}
+
+.explorer_item_header > span {
+    color: #535252;
+}
+
+.explorer_buttons {
+    
+}
+
+.small_play_button {
+    height: 16px;
+    width: 16px;
+    border: 1px solid #252424;
+    background-color: #535252;
+    display: inline-block;
+}
+
+.small_play_button_triangle {
+    margin-left: 5px;
+    margin-top: 2px;
+    width: 0;
+    height: 0;
+    border-left:5px solid #252424;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+}
+
+.small_add_button {
+    height: 16px;
+    width: 16px;
+    border: 1px solid #252424;
+    position: relative;
+    background-color: #535252;;
+}
+
+.small_add_horiz {
+    position: absolute;
+    top: 6px;
+    left: 2px;
+    width: 10px;
+    height: 2px;
+    background-color: #252424;
+}
+.small_add_vert {
+    position: absolute;
+    top: 2px;
+    left: 6px;
+    width: 2px;
+    height: 10px;
+    background-color: #252424;
+}
+
+.explorer_buttons > div {
+    margin-right: 2px;
+}
+
+.explorer_item > .music_button,
+.side_bar_item > .music_button {
+    width: 100%;
+}
+
+.side_bar_item > .music_button {
+    padding-left: 2px;
+}
+
+.explorer_item > .music_button > explorer_text {
+    
+}
+
+.small_up_button {
+    height: 16px;
+    width: 16px;
+    border: 1px solid #252424;
+    position: relative;
+    background-color: #535252;;
+}
+
+.small_up_button_triangle {
+    margin-left: 2px;
+    margin-top: 3px;
+    width: 0;
+    height: 0;
+    border-bottom:8px solid #252424;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+}
+
+.small_down_button {
+    height: 16px;
+    width: 16px;
+    border: 1px solid #252424;
+    position: relative;
+    background-color: #535252;;
+}
+
+.small_down_button_triangle {
+    margin-left: 2px;
+    margin-top: 3px;
+    width: 0;
+    height: 0;
+    border-top:8px solid #252424;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+}

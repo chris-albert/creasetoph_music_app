@@ -5,74 +5,59 @@
  * @author creasetoph
  **/
 (function() {
-    window.creasetoph = {};
-    var namespace = window.creasetoph,
-    C$ = {
+    window.creasetoph = {
+        objects: {},
+        classes: {}
+    };
+    var C$ = {
+        object_ns: window.creasetoph.objects,
+        class_ns: window.creasetoph.classes,
         logger_on: true,
         logger: function(msg) {
             if(this.logger_on) {
                 console.log(msg);
             }
         },
-        inherit: function(child,parent) {
-            var self = function(){};
-            self.class_name = child;
-            self.parent_name = parent;
-            self.do_inheritance = (parent === '')?false:true;
-            namespace[child] = self;
-            return self;
+        get_class_ns: function() {
+            return this.class_ns;
         },
-        do_inheritance: function(object_name) {
-            var this_object = this.find_object(object_name),
-                this_parent = this.find_object(this_object.parent_name)
-                ,new_parent,f;
-            //multiple inheritance
-            if(C$.is_array(this_object.parent_name)) {
-                var tmp = this_object.parent_name,obj;
-                for(var x in tmp) {
-                    obj = this.find_object(object_name);
-                    obj.parent_name = tmp[x];
-                    obj.do_inheritance = true;
-                    C$.do_inheritance(object_name);
-                }
-                obj = this.find_object(object_name);
-                obj.parent_name = tmp;
-                return;
+        get_object_ns: function() {
+            return this.object_ns;
+        },
+        get_class: function(class_name) {
+            var class_obj = this.get_class_ns[class_name];
+            if(typeof class_obj !== 'undefined') {
+                return class_obj;
             }
-            if(this_object.do_inheritance) {
-                new_parent = new this_parent();
-                f = function(){};
-                f.class_name = object_name;
-                f.parent_name = this_object.parent_name;
-                f.do_inheritance = false;
-                f.prototype = new_parent;
-                f.prototype.parent = {};
-
-                for(var i in this_object.prototype) {
-                    if(typeof f.prototype[i] !== 'undefined') {
-                        f.prototype.parent[i] = f.prototype[i];
-                        if(typeof f.prototype.parent[f.parent_name] === 'undefined') {
-                            f.prototype.parent[f.parent_name] = {};
+            return null;
+        },
+        classify: function(class_name,parent_class_name,object) {
+            this.get_class_ns()[class_name] = object['parent_class'] = parent_class_name;
+        },
+        inherit: function(class_name) {
+            var class_obj = this.get_class(class_name),
+                base_class_obj = null;
+            if(class_obj !== null) {
+                base_class_obj = this.get_class(base_class_obj.parent_class);
+                if(base_class_obj !== null) {
+                    C$.foreach(base_class_obj,function(key,value) {
+                        var type = typeof class_obj[key];
+                        if(type === 'undefined') {
+                            class_obj[key] = value;
+                        }else if(type === 'function') {
+                            class_obj[key] = function() {
+                                var _super = value;
+                                return function() {
+                                    return class_obj[key]();
+                                }
+                            };
                         }
-                        f.prototype.parent[f.parent_name][i] = f.prototype[i];
-                    }
-                    f.prototype[i] = this_object.prototype[i];
+                    },this);
+                }else {
+                    this.logger("Could not find class to inherit from: " + base_class_obj.parent_class);
                 }
-                //probably move this out
-                if(typeof f.prototype.init === 'function' && 
-                   typeof f.prototype.auto_init !== "undefined" &&
-                   f.prototype.auto_init) {
-                    
-                    f.prototype.init.call(f.prototype);
-                }
-                f.prototype.object = f;
-                this.replace_object(object_name,f);
             }else {
-                if(typeof this_object.prototype.init === 'function' &&
-                   typeof this_object.prototype.auto_init !== "undefined" &&
-                   this_object.prototype.auto_init) {
-                    this_object.prototype.init();
-                }
+                this.logger("Could not inherit class: " + class_name);
             }
         },
         find_object : function(object) {
@@ -123,7 +108,7 @@
 			return ret;
 		},
         arguments_to_array: function(args) {
-            if(args.legnth !== undefined) return;
+            if(typeof args.length !== 'undefined') return;
             var arr = [];
             for(var l = args.length - 1; l >= 0; l--) {
                 arr.unshift(args[l]);
@@ -627,11 +612,6 @@
 
                 return this;
             },
-            set_attributes: function(attributes) {
-                C$.foreach(attributes,function(name,value) {
-                    this.set_attribute(name,value);
-                },this);
-            },
             add_class: function(class_name) {
                 if(this.className.indexOf(class_name) === -1) {
                     if(this.className !== ''){
@@ -654,11 +634,11 @@
                 return true;
             },
             set: function(text) {
-                switch(this.type) {
+                switch(this.tagName.toLowerCase()) {
                     case 'input':
                         this.value = text;
                         break;
-                    case undefined:
+                    default:
                         this.innerHTML = text;
                         break;
                 }
@@ -682,10 +662,6 @@
                 var tmp_el = document.createElement('div');
                 tmp_el.innerHTML = html;
                 return tmp_el.childNodes[0];
-            },
-            append_new: function(type) {
-                this.append(this.new_el(type));
-                return this;
             },
             append: function(els) {
                 var self = this;

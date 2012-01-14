@@ -1,6 +1,6 @@
 (function() {
     
-     C$.inherit('SoundController','').prototype = {
+     C$.classify('SoundController','',{
         swf_location: '/flash/index/audio.swf',
         object_id   : 'CreasetophFlashObject',
         flash_id    : 'CreasetophFlashPlayer',
@@ -61,9 +61,10 @@
         pause: function() {
             this.flash_obj.pause();
         }
-    };
+    });
 
-    C$.inherit('PlaylistModel','').prototype = {
+
+    C$.classify('PlaylistModel','',{
         Sound: {},
         playlist: {
             tracks : [],
@@ -74,7 +75,7 @@
         paused: false,
         repeat: true,
         init: function(e) {
-            this.Sound = C$.find_object('SoundController').prototype;
+
         },
         onBind: function() {
             
@@ -185,43 +186,31 @@
 
             return time;
         }
-    };
+    });
 
-    /**
-     *
-     */
-    C$.inherit('MusicGovenor','').prototype = {
-        SoundController: null,
-        PlaylistModel: null,
-        LibrarySideBarController: null,
+    C$.classify('MusicGovernor','',{
         config_url: "http://musicwebserver/music/fetch",
         config: null,
-        auto_init: true,
         callbacks: {
             onConfigFetch: []
         },
         init: function() {
-            this.load_app();
         },
         load_app: function() {
             this.attach_children([
                 'SoundController',
                 'PlaylistModel',
                 'LibrarySideBarController',
-                'PlaylistSideBarController'
+                'PlaylistSideBarController',
+                'LibraryController'
             ]);
             this.fetch_config();
         },
         attach_children: function(children) {
-            var self = this;
             C$.foreach(children,function(k,v) {
-                C$.do_inheritance(v);
-                self[v] = C$.find_object(v).prototype;
-                self[v].MusicGovenor = self;
-                if(typeof self[v].init !== 'undfined') {
-                    self[v].init();
-                }
-            });
+                var tmp = C$.Class(v);
+                this[v] = new tmp(this);
+            },this);
         },
         attach_event: function(event,callback) {
             if(typeof this.callbacks[event] !== undefined) {
@@ -246,30 +235,68 @@
         get_config: function() {
             return this.config;
         }
-    };
+    });
 
-    C$.inherit('SideBarController','').prototype = {
-        children: [],
+    C$.classify('MusicAppElement','',{
         element: null,
-        init: function() {},
+        parent: null,
+        init: function(parent) {
+            if(typeof parent !== 'undefined') {
+                this.parent = parent;
+            }
+            this.children = [];
+            this.MusicGovernor = C$.get_object('MusicGovernor');
+            if(typeof this.id !== 'undefined') {
+                this.element = $('#' + this.id);
+            }
+        }
+    });
+
+    C$.classify('SideBarController','MusicAppElement',{
+        children: null,
+        element: null,
+        init: function(parent) {
+            this._super(parent);
+        },
+        build_list: function() {
+            var config = this.MusicGovernor.get_config(),
+                item,items;
+            if(typeof config[this.config_field] !== "undefined") {
+                item = this.add_list_item(this.config_field.charAt(0).toUpperCase() + this.config_field.slice(1));
+                items = C$.foreach(config[this.config_field],function(name) {
+                    return name;
+                });
+                item.add_list_items(items);
+            }
+        },
         add_list_item: function(name) {
-            var item = C$.find_object('SideBarItem');
-            item = new item();
+            var item = C$.Class('SideBarItem');
+            item = new item(this);
             $(this.element).appendChild(item.build(name));
             this.children.push(item);
             return item;
+        },
+        set_explorer: function(name) {
+            var data = this.MusicGovernor.get_config()[this.config_field][name];
+            if(data) {
+                this.MusicGovernor[this.explorer].set_content(data)
+            }
         }
-    };
+    });
 
-    C$.inherit('SideBarItem','').prototype = {
-        children: [],
+    C$.classify('SideBarItem','MusicAppElement',{
+        children: null,
         element: null,
         children_element: null,
         add_button: null,
-        auto_init: true,
-        init: function() {},
+        name: null,
+        parent: null,
+        init: function(parent) {
+            this._super(parent);
+        },
         children_hidden: false,
         build: function(name) {
+            this.name = name;
             var html =  '<div class="side_bar_item">' +
                             '<div class="music_button hbox">' +
                                 '<div class="explorer_buttons hbox box-align-center">' +
@@ -284,13 +311,13 @@
                         '</div>';
             this.element = $().elify(html);
             this.attach_events();
-            this.children_element = $('.side_bar_item_child',this.element);
-            this.add_button = $('.small_add_button',this.element);
+            this.children_element = $('.side_bar_item_child',this.element)[0];
+            this.add_button = $('.small_add_button',this.element)[0];
             return this.element;
         },
         add_list_item: function(name) {
-            var item = C$.find_object('SideBarItem');
-            item = new item();
+            var item = C$.Class('SideBarItem');
+            item = new item(this);
             $(this.children_element).append(item.build(name));
             this.children.push(item);
             return item;
@@ -303,7 +330,7 @@
         },
         attach_events: function() {
             var self = this;
-            $('.explorer_text',this.element).event('click',function(e) {
+            $('.explorer_text',this.element)[0].event('click',function(e) {
                 self.click(e);
             });
         },
@@ -318,7 +345,17 @@
                     this.hide_children();
                 }
             }else {
-                console.log("no children");
+                this.set_explorer();
+            }
+        },
+        set_explorer: function() {
+            var obj = this;
+            while(typeof obj.parent !== 'undefined') {
+                if(obj.parent.parent_class === 'SideBarController') {
+                    obj.parent.set_explorer(this.name);
+                    return;
+                }
+                obj = obj.parent;
             }
         },
         show_children: function() {
@@ -335,54 +372,163 @@
         set_root_el: function(el) {
             this.element = el;
         }
-    };
+    });
 
-    C$.inherit('LibrarySideBarController','SideBarController').prototype = {
-        init: function() {
-            this.element = $('#library_side_bar');
+    C$.classify('LibrarySideBarController','SideBarController',{
+        id: 'library_side_bar',
+        explorer: 'LibraryController',
+        config_field: 'libraries',
+        init: function(parent) {
+            this._super(parent);
             var self = this;
-            this.MusicGovenor.attach_event('onConfigFetch',function() {
+            this.MusicGovernor.attach_event('onConfigFetch',function() {
                 self.build_list();
             });
-        },
-        build_list: function() {
-            var config = this.MusicGovenor.get_config(),
-                self = this,
-                item,items;
-            if(typeof config.libraries !== "undefined") {
-                item = this.add_list_item('Libraries');
-                items = C$.foreach(config.libraries,function(name,value) {
-                    return name;
-                });
-                item.add_list_items(items);
-            }
         }
-    };
+    });
 
-    C$.inherit('PlaylistSideBarController','SideBarController').prototype = {
-        init: function() {
-            this.element = $('#playlist_side_bar');
+    C$.classify('PlaylistSideBarController','SideBarController',{
+        id: 'playlist_side_bar',
+        explorer: 'PlaylistController',
+        config_field: 'playlists',
+        init: function(parent) {
+            this._super(parent);
             var self = this;
-            this.MusicGovenor.attach_event('onConfigFetch',function() {
+            this.MusicGovernor.attach_event('onConfigFetch',function() {
                 self.build_list();
             });
-        },
-        build_list: function() {
-            var config = this.MusicGovenor.get_config(),
-                self = this,
-                item,items;
-            if(typeof config.playlists !== "undefined") {
-                item = this.add_list_item('Playlists');
-                items = C$.foreach(config.playlists,function(name,value) {
-                    return name;
-                });
-                item.add_list_items(items);
-            }
         }
-    };
+    });
 
-    C$.inherit('LibraryController','').prototype = {
+    C$.classify('ExplorerItem','MusicAppElement',{
+        children_data: null,
+        children_hidden: true,
+        children_built: false,
+        title_index: ['Albums','Tracks'],
+        title: '',
+        depth: 0,
+        init: function(parent,children_data) {
+            this._super(parent);
+            this.children_data = children_data;
+        },
+        build: function(name) {
+            this.name = name;
+            var html = '<div class="explorer_item">' +
+                            '<div class="music_button hbox">' +
+                                '<span class="explorer_text hbox box-flex">' + name + '</span>' +
+                                '<div class="explorer_buttons hbox box-align-center">' +
+                                    '<div class="small_play_button">' +
+                                        '<div class="small_play_button_triangle"></div>' +
+                                    '</div>' +
+                                    '<div class="small_add_button">' +
+                                        '<div class="small_add_vert"></div>' +
+                                        '<div class="small_add_horiz"></div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                            '<div class="explorer_item_child" style="display:none;"></div>' +
+                        '</div>';
+             this.element = $().elify(html);
+             this.attach_events();
+             this.children_element = $('.explorer_item_child',this.element)[0];
+             return this.element;
+        },
+        build_header: function(title) {
+            var html = '<div class="explorer_item_header">' +
+                                    '<span class="explorer_text">' + title + '</span>' +
+                       '</div>';
+            return $().elify(html);
+        },
+        attach_events: function() {
+            var self = this;
+            $('.explorer_text',this.element)[0].event('click',function(e) {
+                self.click(e);
+            });
+        },
+        click: function() {
+            if(this.has_children_data()) {
+                if(this.children_hidden) {
+                    this.show_children();
+                }else {
+                    this.hide_children();
+                }
+            }else {
+                
+            }
+        },
+        has_children: function() {
+            return this.children.length !== 0;
+        },
+        has_children_data: function() {
+            return this.children_data.length !== 0;
+        },
+        show_children: function() {
+            this.children_hidden = false;
+            $(this.children_element).css({"display":"block"});
+            if(!this.children_built) {
+                this.build_children();
+            }
+        },
+        build_children: function() {
+            this.children_built = true;
+            var title = this.title_index[this.depth];
+            if(title !== null) {
+                $(this.children_element).appendChild(this.build_header(title));
+            }
+            C$.foreach(this.children_data,function(name,val) {
+                if(title !== 'Tracks') {
+                    this.build_item(name,val);
+                }else {
+                    this.build_item(val);
+                }
+            },this);
+        },
+        build_item: function(name,data) {
+            var item = C$.Class('ExplorerItem');
+            item = new item(this,data);
+            item.depth = this.depth + 1;
 
-    };
+            $(this.children_element).appendChild(item.build(name));
+            this.children.push(item);
+            return item;
+        },
+        hide_children: function() {
+            this.children_hidden = true;
+            $(this.children_element).css({"display":"none"});
+        }
+    });
+
+    C$.classify('ExplorerController','MusicAppElement',{
+        init: function(parent) {
+            this._super(parent);
+        },
+        set_content: function(data) {
+            C$.foreach(data,function(name,val) {
+                this.build_item(name,val);
+            },this);
+        },
+        build_item: function(name,data) {
+            var item = C$.Class('ExplorerItem');
+            item = new item(this,data);
+            $(this.element).appendChild(item.build(name));
+            this.children.push(item);
+            return item;
+        }
+    });
+
+    C$.classify('LibraryController','ExplorerController',{
+        id: 'library_explorer',
+        init: function(parent) {
+            this._super(parent);
+        }
+    });
+
+    C$.ready(function() {
+        var governor = C$.Class('MusicGovernor');
+        governor = new governor()
+        C$.add_object_to_ns('MusicGovernor',governor);
+        governor.load_app();
+    });
+    
 })();
 

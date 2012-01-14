@@ -7,8 +7,8 @@
             a: 'b',
             c: 'd'
         },
-        init: function() {
-            C$.logger("in base init");
+        init: function(param) {
+            C$.logger("in base init: " + param);
         },
         base_only_func: function() {
 
@@ -22,11 +22,15 @@
             e: 'f',
             g: 'h'
         },
-        init: function() {
-            C$.logger("in child init");
-            _super();
+        init: function(param) {
+            C$.logger("in child init: " + param);
+            this.new_arr = ['f','3'];
+            this._super(param);
         }
     });
 
-    C$.inherit('child');
+    C$.ready(function() {
+        var child = C$.Class('child');
+        var obj = new child('asdf');
+    });
 })();

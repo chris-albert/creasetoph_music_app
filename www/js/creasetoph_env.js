@@ -24,68 +24,63 @@
         get_object_ns: function() {
             return this.object_ns;
         },
+        add_object_to_ns: function(name,obj) {
+            this.get_object_ns()[name] = obj;
+        },
+        get_object: function(name) {
+            var tmp = this.get_object_ns()[name];
+            if(typeof tmp !== 'undefined') {
+                return tmp;
+            }
+            return null;
+        },
         get_class: function(class_name) {
-            var class_obj = this.get_class_ns[class_name];
+            var class_obj = this.get_class_ns()[class_name];
             if(typeof class_obj !== 'undefined') {
                 return class_obj;
             }
             return null;
         },
+        Class: function(class_name) {
+            if(typeof class_name !== 'undefined') {
+                return this.funcify(this.get_class(class_name));
+            }
+            return null;
+        },
         classify: function(class_name,parent_class_name,object) {
-            this.get_class_ns()[class_name] = object['parent_class'] = parent_class_name;
+            object['parent_class'] = parent_class_name
+            this.get_class_ns()[class_name] = object;
+        },
+        funcify: function(class_obj) {
+            var Class = function() {
+                if(this.init) {
+                    this.init.apply(this,arguments);
+                }
+            };
+            Class.prototype = class_obj;
+            Class.prototype.constructor = Class;
+            return Class;
         },
         inherit: function(class_name) {
             var class_obj = this.get_class(class_name),
                 base_class_obj = null;
+                class_obj.class_name = class_name;
             if(class_obj !== null) {
-                base_class_obj = this.get_class(base_class_obj.parent_class);
+                base_class_obj = this.get_class(class_obj.parent_class);
                 if(base_class_obj !== null) {
                     C$.foreach(base_class_obj,function(key,value) {
                         var type = typeof class_obj[key];
                         if(type === 'undefined') {
                             class_obj[key] = value;
                         }else if(type === 'function') {
-                            class_obj[key] = function() {
-                                var _super = value;
+                            class_obj[key] = (function(super_fn,fn){
                                 return function() {
-                                    return class_obj[key]();
-                                }
-                            };
+                                    this._super = super_fn;
+                                    return fn.apply(this, arguments);
+                                };
+                           })(value,class_obj[key]);
                         }
                     },this);
-                }else {
-                    this.logger("Could not find class to inherit from: " + base_class_obj.parent_class);
-                }
-            }else {
-                this.logger("Could not inherit class: " + class_name);
-            }
-        },
-        find_object : function(object) {
-            if(namespace.hasOwnProperty(object)){
-                return namespace[object];
-            }else {
-                return false;
-            }
-        },
-        replace_object : function(object,replacer) {
-            namespace[object] = replacer;
-        },
-        clone_object: function(o) {
-            var f = function(){};
-            f.prototype = o;
-            return new f;
-        },
-        clone_array_of_objects: function(a) {
-            var new_arr = [];
-            for(var i in a) {
-                new_arr[i] = C$.clone_object(a[i]);
-            }
-            return new_arr;
-        },
-        extend_namespace: function(extend_object) {
-            for(var i in extend_object) {
-                if(extend_object.hasOwnProperty(i)) {
-                    namespace[i] = extend_object[i];
                 }
             }
         },
@@ -107,30 +102,33 @@
 			}
 			return ret;
 		},
-        arguments_to_array: function(args) {
-            if(typeof args.length !== 'undefined') return;
-            var arr = [];
-            for(var l = args.length - 1; l >= 0; l--) {
-                arr.unshift(args[l]);
-            }
-            return arr;
+        ready_funcs: [],
+        ready: function(func) {
+            this.ready_funcs.push(func);
         },
-        $: function(el, root, array) {
-            array = array || false;
+        call_ready_funcs: function() {
+            this.foreach(this.ready_funcs,function(i,func) {
+                func();
+            });
+        },
+        $: function(el, root) {
             if(typeof el === 'string') {
                 var els = window.Sizzle(el,root);
-                if(els.length > 1) {
-                    for(var i in els) {
-                        C$.extend_obj(els[i],C$.$functions);
-                    }
-                    return els;
-                }else if(els.length === 1) {
-                    if(!array) {
-                        return C$.extend_obj(els[0],C$.$functions);
+                if(els.length >= 1) {
+                    if(el.indexOf('#') === 0) {
+                        C$.extend_obj(els[0],C$.$functions)
+                        return els[0];
                     }else {
-                        return [C$.extend_obj(els[0],C$.$functions)];
+                        for(var i in els) {
+                            C$.extend_obj(els[i],C$.$functions);
+                        }
+                        els.foreach = function(func) {
+                            return C$.foreach(els,func);
+                        };
+                        return els;
                     }
                 }
+                return null;
             }else if(typeof el === 'object') {
                 if(el.extended) {
                     return el;
@@ -138,10 +136,11 @@
                 return C$.extend_obj(el,C$.$functions);
             }else if(typeof el === 'undefined') {
                 return {
-                    new_el: C$.$functions.new_el,
+                    create: C$.$functions.create,
                     elify: C$.$functions.elify
                 };
             }
+            return null;
         },
         objectify: function(arr) {
         	if(arr.length) {
@@ -154,10 +153,11 @@
             return null;
         },
         init: function() {
-           
-        },
-        front_controller: function(e) {
-            
+            //inherit all the classes that need to be inherited
+            C$.foreach(C$.get_class_ns(),function(key,value) {
+                this.inherit(key);
+            },C$);
+            C$.call_ready_funcs();
         },
         get_elements_by_attribute: function(attribute,root) {
             root = root || document;
@@ -655,7 +655,7 @@
                         return this.innerHTML;
                 }
             },
-            new_el: function(new_els) {
+            create: function(new_els) {
                 //TODO: this better
             },
             elify: function(html) {
@@ -669,6 +669,7 @@
                     els = Array.prototype.slice.call(arguments, 0);
                 }
                 C$.foreach(els, function(index,el) {
+
                     self.appendChild(el);
                 });
                 return this;
@@ -687,7 +688,7 @@
                 after_node.parentNode.insertBefore(this,after_node.nextSibling);
                 return this;
             },
-            get_sibling:function(sibling) {
+            get_sibling: function(sibling) {
                 var match = {
                     ID: /#((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
                     CLASS: /\.((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
@@ -857,16 +858,20 @@
                 }
             },
             event: function(event,func) {
-                if(typeof this.removeEventListener !== 'undefined') {
-                    this.removeEventListener(event,func,true);
+                if(typeof this.addEventListener !== 'undefined') {
                     this.addEventListener(event,func,true);
                 }else if(typeof this.attachEvent !== 'undefined') {
-                    this.detachEvent('on' + event,func);
                     this.attachEvent('on' + event,func);
                 }
+                return this;
             },
             remove_event: function(event) {
-                
+                if(typeof this.removeEventListener !== 'undefined') {
+                    this.removeEventListener(event,func,true);
+                }else if(typeof this.detachEvent !== 'undefined') {
+                    this.detachEvent('on' + event,func);
+                }
+                return this;
             },
             ajax: function(url,callback,post_vars,scope) {
                 C$.ajax(url,callback,post_vars,scope);

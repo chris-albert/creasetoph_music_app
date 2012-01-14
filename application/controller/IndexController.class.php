@@ -34,6 +34,10 @@ class IndexController extends BaseController{
         $this->Template->render('home');
 	}
 
+    public function test() {
+        $this->Template->render('test');
+    }
+
     public function phpinfo() {
 	    echo phpinfo();
     }

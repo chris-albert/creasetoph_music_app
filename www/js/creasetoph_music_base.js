@@ -188,6 +188,26 @@
         }
     });
 
+    C$.classify('EventDelegator','',{
+        callbacks: {
+            onConfigFetch: []
+        },
+        attach_event: function(event,callback) {
+            if(typeof this.callbacks[event] !== undefined) {
+                this.callbacks[event].push(callback);
+            }
+        },
+        fire_event: function(event,scope,a,b,c,d) {
+            scope = scope || this;
+            C$.logger("Firing event: " + event);
+            if(typeof this.callbacks[event] !== 'undefined') {
+                C$.foreach(this.callbacks[event],function(index,func) {
+                    func.apply(scope,a,b,c,d);
+                });
+            }
+        }
+    });
+
     C$.classify('MusicGovernor','',{
         config_url: "http://musicwebserver/music/fetch",
         config: null,

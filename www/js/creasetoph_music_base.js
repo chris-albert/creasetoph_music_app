@@ -1,6 +1,6 @@
 (function() {
     
-     C$.classify('SoundController','',{
+     C$.classify('Sound','',{
         swf_location: '/flash/index/audio.swf',
         object_id   : 'CreasetophFlashObject',
         flash_id    : 'CreasetophFlashPlayer',
@@ -46,7 +46,7 @@
                 C$.logger('flash_loaded');
             },
             on_update: function(info) {
-               
+                C$.logger('on_update');
             }
         },
         load: function(url) {
@@ -63,9 +63,16 @@
         }
     });
 
+    C$.classify('SoundController','',{
+        Sound: null,
+        init: function() {
+            var sound = C$.Class('Sound');
+            this.Sound = new sound();
+        }
+    });
 
     C$.classify('PlaylistModel','',{
-        repeat: true,
+        repeat  : true,
         playlist: null,
         init: function(data) {
             this.playlist = {};
@@ -134,6 +141,19 @@
             time = mins + ':' + secs;
 
             return time;
+        }
+    });
+
+    C$.classify('PlaylistsModel','',{
+        init: function() {
+            this.playlists = {};
+        },
+        create_playlist: function(name,data) {
+            var playlist = C$.Class('PlaylistModel');
+            this.playlists[name] = new playlist(data)
+        },
+        add_to_playlist: function(name,data) {
+            this.playlists[name].add_to_playlist(data);
         }
     });
 
@@ -358,10 +378,12 @@
         explorer: 'PlaylistController',
         config_field: 'playlists',
         config: null,
+        playlists_model: null,
         init: function(parent) {
             this._super(parent);
-            this.playlists = {};
-            var self = this;
+            var self = this,
+                playlists_model = C$.Class('PlaylistsModel');
+            this.playlists_model = new playlists_model();
             this.attach_event('onExplorerItemAddClicked',function(data) {
                 self.onPlaylistAdd(data);
             });
@@ -370,14 +392,10 @@
             this.config = this.get_governor_config();
             this.config['Now Playing'] = [];
             var items = C$.foreach(this.config,function(name,value) {
-                this.create_playlist(name,value);
+                this.playlists_model.create_playlist(name,value);
                 return name;
             },this);
             this._super(items);
-        },
-        create_playlist: function(name,data) {
-            var playlist = C$.Class('PlaylistModel');
-            this.playlists[name] = new playlist(data)
         },
         set_explorer: function(name) {
             this.selected_item = name;
@@ -385,11 +403,8 @@
         },
         onPlaylistAdd: function(data) {
             switch(data.selected_data.length) {
-                case 0:
-                    C$.logger('no data');
-                    break;
                 case 1:
-                    C$.logger('artist');
+                    data = this.add_artist_to_playlist(data);
                     break;
                 case 2:
                     data = this.add_album_to_playlist(data);
@@ -400,6 +415,7 @@
                 default:
                     break;
             }
+            debugger;
             this.fire_event('onPlaylistAdd',this,data);
         },
         add_track_to_playlist: function(data) {
@@ -410,15 +426,34 @@
             });
         },
         add_album_to_playlist: function(data) {
-//            var list =
-//            debugger;
-
+            var artist = data.selected_data[1],
+                album = data.selected_data[0];
+            return C$.foreach(data.library_data[artist][album],function(i,track) {
+                return this.add_to_playlist({
+                    artist: artist,
+                    album: album,
+                    track: track
+                });
+            },this);
+        },
+        add_artist_to_playlist: function(data) {
+            var artist = data.selected_data[0],
+                arr = [];
+            C$.foreach(data.library_data[artist],function(album,tracks) {
+                 arr = arr.concat(C$.foreach(tracks,function(i,track) {
+                    return this.add_to_playlist({
+                        artist: artist,
+                        album: album,
+                        track: track
+                    });
+                },this));
+            },this);
+            return arr;
         },
         add_to_playlist: function(data) {
-            debugger;
             if(this.selected_item !== '') {
                 this.config[this.selected_item].push(data);
-                this.playlists[this.selected_item].add_to_playlist(data);
+                this.playlists_model.add_to_playlist(this.selected_item,data);
             }
             return data;
         }

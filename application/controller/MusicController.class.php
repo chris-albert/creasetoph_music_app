@@ -46,7 +46,18 @@ class MusicController extends BaseController{
                 'other_library' => $this->getDirStructure($this->music_root, '/\.mp3$/'),
              ),
             'playlists' => array(
-                'great' => '',
+                'great' => array(
+                    array(
+                        'artist' => 'The Beatles',
+                        'album' => 'The White Album',
+                        'track' => 'Dear Prudence'
+                    ),
+                    array(
+                        'artist' => 'The Beatles',
+                        'album' => 'The White Album',
+                        'track' => 'Obla Dee Obla Da'
+                    )
+                ),
                 'awesome' => ''
             )
         ));

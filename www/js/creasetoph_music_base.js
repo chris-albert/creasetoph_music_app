@@ -189,32 +189,30 @@
     });
 
     C$.classify('EventDelegator','',{
-        callbacks: {
-            onConfigFetch: []
-        },
+        callbacks: {},
         attach_event: function(event,callback) {
             if(typeof this.callbacks[event] !== undefined) {
                 this.callbacks[event].push(callback);
+                return this.callbacks[event].length - 1;
             }
+            return null;
         },
         fire_event: function(event,scope,a,b,c,d) {
             scope = scope || this;
             C$.logger("Firing event: " + event);
             if(typeof this.callbacks[event] !== 'undefined') {
                 C$.foreach(this.callbacks[event],function(index,func) {
-                    func.apply(scope,a,b,c,d);
+                    func.call(scope,a,b,c,d);
                 });
             }
         }
     });
 
-    C$.classify('MusicGovernor','',{
+    C$.classify('MusicGovernor','EventDelegator',{
         config_url: "http://musicwebserver/music/fetch",
         config: null,
-        callbacks: {
-            onConfigFetch: []
-        },
         init: function() {
+            this.callbacks.onConfigFetch = []
         },
         load_app: function() {
             this.attach_children([
@@ -222,7 +220,8 @@
                 'PlaylistModel',
                 'LibrarySideBarController',
                 'PlaylistSideBarController',
-                'LibraryController'
+                'LibraryController',
+                'PlaylistController'
             ]);
             this.fetch_config();
         },
@@ -231,19 +230,6 @@
                 var tmp = C$.Class(v);
                 this[v] = new tmp(this);
             },this);
-        },
-        attach_event: function(event,callback) {
-            if(typeof this.callbacks[event] !== undefined) {
-                this.callbacks[event].push(callback);
-            }
-        },
-        fire_event: function(event) {
-            C$.logger("Firing event: " + event);
-            if(typeof this.callbacks[event] !== 'undefined') {
-                C$.foreach(this.callbacks[event],function(index,func) {
-                    func();
-                });
-            }
         },
         fetch_config: function() {
             var self = this;
@@ -257,7 +243,7 @@
         }
     });
 
-    C$.classify('MusicAppElement','',{
+    C$.classify('MusicAppElement','EventDelegator',{
         element: null,
         parent: null,
         MusicGovernor: null,
@@ -277,15 +263,22 @@
     C$.classify('SideBarController','MusicAppElement',{
         init: function(parent) {
             this._super(parent);
+            this.callbacks['on' + this.explorer + 'SetExplorer'] = [];
         },
         build_list: function() {
             var config = this.MusicGovernor.get_config(),
                 item,items;
             if(typeof config[this.config_field] !== "undefined") {
                 item = this.add_list_item(this.config_field.charAt(0).toUpperCase() + this.config_field.slice(1));
+
                 items = C$.foreach(config[this.config_field],function(name) {
                     return name;
                 });
+                if(typeof this.static_data !== 'undefined') {
+                    C$.foreach(this.static_data,function(i,v) {
+                        items.unshift(v);
+                    });
+                }
                 item.add_list_items(items);
             }
         },
@@ -298,9 +291,7 @@
         },
         set_explorer: function(name) {
             var data = this.MusicGovernor.get_config()[this.config_field][name];
-            if(data) {
-                this.MusicGovernor[this.explorer].set_content(data)
-            }
+            this.fire_event('on' + this.explorer + 'SetExplorer',this,data);
         }
     });
 
@@ -310,6 +301,9 @@
         name: null,
         init: function(parent) {
             this._super(parent);
+            this.callbacks.onSideBarItemSetExplorer = [];
+            this.callbacks.onSideBarItemShow = [];
+            this.callbacks.onSideBarItemHide = [];
         },
         children_hidden: false,
         build: function(name) {
@@ -367,21 +361,24 @@
         },
         set_explorer: function() {
             var obj = this;
+            this.fire_event('onSideBarItemSetExplorer',this,this.name);
             while(typeof obj.parent !== 'undefined') {
                 if(obj.parent.parent_class === 'SideBarController') {
                     obj.parent.set_explorer(this.name);
-                    return;
+                    break;
                 }
                 obj = obj.parent;
-            }
+            } 
         },
         show_children: function() {
             this.children_hidden = false;
             $(this.children_element).css({"display":"block"});
+            this.fire_event('onSideBarItemShow',this,this.name);
         },
         hide_children: function() {
             this.children_hidden = true;
             $(this.children_element).css({"display":"none"});
+            this.fire_event('onSideBarItemHide',this,this.name);
         },
         show_add_button: function() {
             //this.add_button.css({'display':'inline-block'});
@@ -407,6 +404,7 @@
     C$.classify('PlaylistSideBarController','SideBarController',{
         id: 'playlist_side_bar',
         explorer: 'PlaylistController',
+        static_data: ['Now Playing'],
         config_field: 'playlists',
         init: function(parent) {
             this._super(parent);
@@ -421,14 +419,94 @@
         children_data: null,
         children_hidden: true,
         children_built: false,
-        title_index: ['Albums','Tracks'],
+        title_index: [],
         title: '',
         depth: 0,
+        name: '',
         match_pattern: new RegExp(/(^\d*|_|\.mp3$)/g),
-
         init: function(parent,children_data) {
             this._super(parent);
             this.children_data = children_data;
+            this.callbacks.onExplorerItemShow = [];
+            this.callbacks.onExplorerItemHide = [];
+        },
+        build: function() {},
+        build_header: function() {},
+        attach_events: function() {
+            var self = this;
+            $('.explorer_text',this.element)[0].event('click',function(e) {
+                self.click(e);
+            });
+        },  
+        click: function() {
+            if(this.has_children_data()) {
+                if(this.children_hidden) {
+                    this.show_children();
+                }else {
+                    this.hide_children();
+                }
+            }else {
+                
+            }
+        },
+        has_children: function() {
+            return this.children.length !== 0;
+        },
+        has_children_data: function() {
+            if(typeof this.children_data === 'undefined') {
+                return false;
+            }
+            return this.children_data.length !== 0;
+        },
+        show_children: function() {
+            this.children_hidden = false;
+            $(this.children_element).css({"display":"block"});
+            if(!this.children_built) {
+                this.build_children();
+            }
+            this.fire_event('onExplorerItemShow',this);
+        },
+        hide_children: function() {
+            this.children_hidden = true;
+            $(this.children_element).css({"display":"none"});
+            this.fire_event('onExplorerItemHide',this);
+        },
+        build_children: function() {
+            this.children_built = true;
+            var title = this.title_index[this.depth];
+            if(title !== null) {
+                $(this.children_element).appendChild(this.build_header(title));
+            }
+            C$.foreach(this.children_data,function(name,val) {
+                if(this.depth < this.title_index.length - 1) {
+                    this.build_item(name,val);
+                }else {
+                    this.build_item(val);
+                }
+            },this);
+        },
+        build_item: function(name,data) {
+            var item = C$.Class(this.class_name);
+            item = new item(this,data);
+            item.depth = this.depth + 1;
+            $(this.children_element).appendChild(item.build(name));
+            this.children.push(item);
+            return item;
+        }, 
+        format_name:function(name) {
+            var str = name.replace(this.match_pattern,' ')
+            return C$.string.capitalize(C$.string.trim(str));
+        }
+    });
+
+    C$.classify('LibraryExplorerItem','ExplorerItem',{
+        add_button: null,
+        play_button: null,
+        title_index: ['Albums','Tracks'],
+        init: function(parent,children_data) {
+            this._super(parent,children_data);
+            this.callbacks.onExplorerItemAddClicked = [];
+            this.callbacks.onExplorerItemPlayClicked = [];
         },
         build: function(name) {
             this.name = name;
@@ -448,6 +526,8 @@
                             '<div class="explorer_item_child" style="display:none;"></div>' +
                         '</div>';
              this.element = $().elify(html);
+             this.add_button = $('.small_add_button',this.element)[0];
+             this.play_button = $('.small_play_button',this.element)[0];
              this.attach_events();
              this.children_element = $('.explorer_item_child',this.element)[0];
              return this.element;
@@ -459,81 +539,78 @@
             return $().elify(html);
         },
         attach_events: function() {
+            this._super();
             var self = this;
-            $('.explorer_text',this.element)[0].event('click',function(e) {
-                self.click(e);
+            $(this.add_button).event('click',function(e) {
+                self.add_button_click(e);
+            });
+            $(this.play_button).event('click',function(e) {
+                self.play_button_click(e);
             });
         },
-        click: function() {
-            if(this.has_children_data()) {
-                if(this.children_hidden) {
-                    this.show_children();
-                }else {
-                    this.hide_children();
-                }
-            }else {
-                
-            }
+        play_button_click: function(e) {
+            this.fire_event('onExplorerItemPlayClicked',this);
         },
-        has_children: function() {
-            return this.children.length !== 0;
-        },
-        has_children_data: function() {
-            return this.children_data.length !== 0;
-        },
-        show_children: function() {
-            this.children_hidden = false;
-            $(this.children_element).css({"display":"block"});
-            if(!this.children_built) {
-                this.build_children();
-            }
-        },
-        build_children: function() {
-            this.children_built = true;
-            var title = this.title_index[this.depth];
-            if(title !== null) {
-                $(this.children_element).appendChild(this.build_header(title));
-            }
-            C$.foreach(this.children_data,function(name,val) {
-                if(title !== 'Tracks') {
-                    this.build_item(name,val);
-                }else {
-                    this.build_item(val);
-                }
-            },this);
-        },
-        build_item: function(name,data) {
-            var item = C$.Class('ExplorerItem');
-            item = new item(this,data);
-            item.depth = this.depth + 1;
+        add_button_click: function(e) {
+            this.fire_event('onExplorerItemAddClicked',this);
+        }
+    });
 
-            $(this.children_element).appendChild(item.build(name));
-            this.children.push(item);
-            return item;
+    C$.classify('PlaylistExplorerItem','ExplorerItem',{
+        init: function(parent) {
+            this._super(parent);
         },
-        hide_children: function() {
-            this.children_hidden = true;
-            $(this.children_element).css({"display":"none"});
+        build: function(index,data) {
+            this.name = index;
+            var html = '<div class="explorer_item">' +
+                            '<div class="music_button hbox">' +
+                                '<span class="explorer_text hbox box-flex">' + this.format_name(data) + '</span>' +
+                                '<div class="explorer_buttons hbox box-align-center">' +
+                                    '<div class="small_up_button">' +
+                                        '<div class="small_up_button_triangle"></div>' +
+                                    '</div>' +
+                                    '<div class="small_down_button">' +
+                                        '<div class="small_down_button_triangle"></div>' +
+                                    '</div>' +
+                                    '<div class="small_add_button">' +
+                                        '<div class="small_add_horiz"></div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+            this.element = $().elify(html);
+            return this.element;
         },
-        format_name:function(name) {
-            var str = name.replace(this.match_pattern,' ')
-            return C$.string.capitalize(C$.string.trim(str));
+        format_name: function(data) {
+            return [
+                data.artist,
+                data.album,
+                this._super(data.track)
+            ].join(' - ');
         }
     });
 
     C$.classify('ExplorerController','MusicAppElement',{
         init: function(parent) {
             this._super(parent);
+            var self = this;
+            this.attach_event('on' + this.class_name + 'SetExplorer',function(data) {
+                self.set_content(data);
+            });
         },
         set_content: function(data) {
+            this.clear_element();
             C$.foreach(data,function(name,val) {
                 this.build_item(name,val);
             },this);
         },
+        clear_element: function() {
+            $(this.element).empty();
+        },
         build_item: function(name,data) {
-            var item = C$.Class('ExplorerItem');
+            var item = C$.Class(this.explorer_item);
             item = new item(this,data);
-            $(this.element).appendChild(item.build(name));
+            $(this.element).appendChild(item.build(name,data));
             this.children.push(item);
             return item;
         }
@@ -541,6 +618,15 @@
 
     C$.classify('LibraryController','ExplorerController',{
         id: 'library_explorer',
+        explorer_item: 'LibraryExplorerItem',
+        init: function(parent) {
+            this._super(parent);
+        }
+    });
+
+    C$.classify('PlaylistController','ExplorerController',{
+        id: 'playlist_explorer',
+        explorer_item: 'PlaylistExplorerItem',
         init: function(parent) {
             this._super(parent);
         }

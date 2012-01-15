@@ -53,24 +53,7 @@
             <div class="explorer_right_container hbox box-flex-1">
                 <div class="explorer_content_container  box-flex-1 vbox">
                     <div class="status_bar status_bar_center"></div>
-                    <div class="explorer_content box-flex">
-                        <div class="explorer_item">
-                            <div class="music_button hbox">
-                                <span class="explorer_text hbox box-flex">The Beatles - The White Album - Dear Prudence</span>
-                                <div class="explorer_buttons hbox box-align-center">
-                                    <div class="small_up_button">
-                                        <div class="small_up_button_triangle"></div>
-                                    </div>
-                                    <div class="small_down_button">
-                                        <div class="small_down_button_triangle"></div>
-                                    </div>
-                                    <div class="small_add_button">
-                                        <div class="small_add_horiz"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="explorer_content box-flex" id="playlist_explorer"></div>
                 </div>
                 <div class="explorer_side_bar_container vbox">
                     <div class="status_bar status_bar_right"></div>

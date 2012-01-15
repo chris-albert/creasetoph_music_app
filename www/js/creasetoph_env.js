@@ -682,6 +682,9 @@
                 tmp_el.innerHTML = html;
                 return tmp_el.childNodes[0];
             },
+            empty: function() {
+                this.innerHTML = '';
+            },
             append: function(els) {
                 var self = this;
                 if(typeof els.length === 'undefined') {

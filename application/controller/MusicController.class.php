@@ -58,7 +58,7 @@ class MusicController extends BaseController{
                         'track' => 'Obla Dee Obla Da'
                     )
                 ),
-                'awesome' => ''
+                'awesome' => array()
             )
         ));
     }

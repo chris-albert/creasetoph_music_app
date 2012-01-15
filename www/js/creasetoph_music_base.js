@@ -65,62 +65,15 @@
 
 
     C$.classify('PlaylistModel','',{
-        Sound: {},
-        playlist: {
-            tracks : [],
-            current: null
-        },
-        cache: [],
-        playing: false,
-        paused: false,
         repeat: true,
-        init: function(e) {
-
-        },
-        onBind: function() {
-            
-        },
-        play_pause: function(e) {
-            if(this.playing) {
-                this.pause();
-            }else {
-                this.play();
-            }
-            return this;
-        },
-        play: function() {
-            var curr_track;
-            if(this.paused) {
-                this.Sound.play();
-                this.paused = false;
-            }else {
-                curr_track = this.playlist.tracks[this.playlist.current];
-                if(curr_track) {
-                    this.Sound.load(creasetoph.CreasetophModel.prototype.base_url + ':1338/music/stream/' + curr_track.artist + '/' + curr_track.album + '/' + curr_track.track);
-                    this.Sound.play();
-                }
-            }
-            this.playing = true;
-            this.set_play_pause();
-            return this;
-        },
-        stop: function() {
-            if(this.playing) {
-            	this.Sound.stop();
-            	this.playing = false;
-            	this.paused = false;
-            }
-            this.set_play_pause();
-            return this;
-        },
-        pause: function() {
-            if(this.playing) {
-                this.Sound.pause();
-                this.paused = true;
-                this.playing = false;
-            }
-            this.set_play_pause();
-            return this;
+        playlist: null,
+        init: function(data) {
+            this.playlist = {};
+            this.playlist.tracks = [];
+            this.playlist.current = 0;
+            C$.foreach(data,function(i,v) {
+                this.add_to_playlist(v);
+            },this);
         },
         next: function() {
             	this.next_playlist();
@@ -130,12 +83,8 @@
             	this.prev_playlist();
             	return this;
         },
-        add_to_playlist: function(artist,album,track) {
-            this.playlist.tracks.push({
-                'artist': artist,
-                'album' : album,
-                'track' : track
-            });
+        add_to_playlist: function(obj) {
+            this.playlist.tracks.push(obj);
             return this;
         },
         remove_from_playlist: function(track) {
@@ -191,10 +140,12 @@
     C$.classify('EventDelegator','',{
         callbacks: {},
         attach_event: function(event,callback) {
-            if(typeof this.callbacks[event] !== undefined) {
-                this.callbacks[event].push(callback);
-                return this.callbacks[event].length - 1;
+            if(typeof this.callbacks[event] === 'undefined') {
+                this.callbacks[event] = [];
             }
+            this.callbacks[event].push(callback);
+            return this.callbacks[event].length - 1;
+
             return null;
         },
         fire_event: function(event,scope,a,b,c,d) {
@@ -212,7 +163,6 @@
         config_url: "http://musicwebserver/music/fetch",
         config: null,
         init: function() {
-            this.callbacks.onConfigFetch = []
         },
         load_app: function() {
             this.attach_children([
@@ -261,26 +211,19 @@
     });
 
     C$.classify('SideBarController','MusicAppElement',{
+        selected_item: '',
+        config: null,
         init: function(parent) {
             this._super(parent);
-            this.callbacks['on' + this.explorer + 'SetExplorer'] = [];
+            var self = this;
+            this.attach_event('onConfigFetch',function() {
+                self.build_list();
+            });
         },
-        build_list: function() {
-            var config = this.MusicGovernor.get_config(),
-                item,items;
-            if(typeof config[this.config_field] !== "undefined") {
-                item = this.add_list_item(this.config_field.charAt(0).toUpperCase() + this.config_field.slice(1));
+        build_list: function(items) {
+            var item = this.add_list_item(this.config_field.charAt(0).toUpperCase() + this.config_field.slice(1));
+            item.add_list_items(items.sort());
 
-                items = C$.foreach(config[this.config_field],function(name) {
-                    return name;
-                });
-                if(typeof this.static_data !== 'undefined') {
-                    C$.foreach(this.static_data,function(i,v) {
-                        items.unshift(v);
-                    });
-                }
-                item.add_list_items(items);
-            }
         },
         add_list_item: function(name) {
             var item = C$.Class('SideBarItem');
@@ -289,8 +232,10 @@
             this.children.push(item);
             return item;
         },
-        set_explorer: function(name) {
-            var data = this.MusicGovernor.get_config()[this.config_field][name];
+        get_governor_config: function() {
+            return this.MusicGovernor.get_config()[this.config_field];
+        },
+        set_explorer: function(data) {
             this.fire_event('on' + this.explorer + 'SetExplorer',this,data);
         }
     });
@@ -301,9 +246,6 @@
         name: null,
         init: function(parent) {
             this._super(parent);
-            this.callbacks.onSideBarItemSetExplorer = [];
-            this.callbacks.onSideBarItemShow = [];
-            this.callbacks.onSideBarItemHide = [];
         },
         children_hidden: false,
         build: function(name) {
@@ -394,24 +336,91 @@
         config_field: 'libraries',
         init: function(parent) {
             this._super(parent);
-            var self = this;
-            this.MusicGovernor.attach_event('onConfigFetch',function() {
-                self.build_list();
-            });
+        },
+        build_list: function() {
+            this.config = this.get_governor_config();
+            var items = C$.foreach(this.config,function(name) {
+                    return name;
+                });
+            this._super(items);
+        },
+        set_explorer: function(name) {
+            this.selected_item = name;
+            this._super(this.get_governor_config()[name]);
+        },
+        get_current_list: function() {
+            return this.config[this.selected_item];
         }
     });
 
     C$.classify('PlaylistSideBarController','SideBarController',{
         id: 'playlist_side_bar',
         explorer: 'PlaylistController',
-        static_data: ['Now Playing'],
         config_field: 'playlists',
+        config: null,
         init: function(parent) {
             this._super(parent);
+            this.playlists = {};
             var self = this;
-            this.MusicGovernor.attach_event('onConfigFetch',function() {
-                self.build_list();
+            this.attach_event('onExplorerItemAddClicked',function(data) {
+                self.onPlaylistAdd(data);
             });
+        },
+        build_list: function() {
+            this.config = this.get_governor_config();
+            this.config['Now Playing'] = [];
+            var items = C$.foreach(this.config,function(name,value) {
+                this.create_playlist(name,value);
+                return name;
+            },this);
+            this._super(items);
+        },
+        create_playlist: function(name,data) {
+            var playlist = C$.Class('PlaylistModel');
+            this.playlists[name] = new playlist(data)
+        },
+        set_explorer: function(name) {
+            this.selected_item = name;
+            this._super(this.config[name]);
+        },
+        onPlaylistAdd: function(data) {
+            switch(data.selected_data.length) {
+                case 0:
+                    C$.logger('no data');
+                    break;
+                case 1:
+                    C$.logger('artist');
+                    break;
+                case 2:
+                    data = this.add_album_to_playlist(data);
+                    break;
+                case 3:
+                    data = [this.add_track_to_playlist(data)];
+                    break;
+                default:
+                    break;
+            }
+            this.fire_event('onPlaylistAdd',this,data);
+        },
+        add_track_to_playlist: function(data) {
+            return this.add_to_playlist({
+                artist: data.selected_data[2],
+                album: data.selected_data[1],
+                track: data.selected_data[0]
+            });
+        },
+        add_album_to_playlist: function(data) {
+//            var list =
+//            debugger;
+
+        },
+        add_to_playlist: function(data) {
+            debugger;
+            if(this.selected_item !== '') {
+                this.config[this.selected_item].push(data);
+                this.playlists[this.selected_item].add_to_playlist(data);
+            }
+            return data;
         }
     });
 
@@ -427,8 +436,6 @@
         init: function(parent,children_data) {
             this._super(parent);
             this.children_data = children_data;
-            this.callbacks.onExplorerItemShow = [];
-            this.callbacks.onExplorerItemHide = [];
         },
         build: function() {},
         build_header: function() {},
@@ -505,8 +512,6 @@
         title_index: ['Albums','Tracks'],
         init: function(parent,children_data) {
             this._super(parent,children_data);
-            this.callbacks.onExplorerItemAddClicked = [];
-            this.callbacks.onExplorerItemPlayClicked = [];
         },
         build: function(name) {
             this.name = name;
@@ -548,11 +553,23 @@
                 self.play_button_click(e);
             });
         },
+        gather_data: function() {
+            var data = [],
+                obj = this;
+            while(obj.class_name === 'LibraryExplorerItem') {
+                data.push(obj.name);
+                obj = obj.parent;
+            }
+            return {
+                selected_data: data,
+                library_data: obj.data
+            };
+        },
         play_button_click: function(e) {
-            this.fire_event('onExplorerItemPlayClicked',this);
+            this.fire_event('onExplorerItemPlayClicked',this,this.gather_data());
         },
         add_button_click: function(e) {
-            this.fire_event('onExplorerItemAddClicked',this);
+            this.fire_event('onExplorerItemAddClicked',this,this.gather_data());
         }
     });
 
@@ -591,8 +608,10 @@
     });
 
     C$.classify('ExplorerController','MusicAppElement',{
+        data: null,
         init: function(parent) {
             this._super(parent);
+            this.data = null;
             var self = this;
             this.attach_event('on' + this.class_name + 'SetExplorer',function(data) {
                 self.set_content(data);
@@ -600,12 +619,15 @@
         },
         set_content: function(data) {
             this.clear_element();
+            this.data = data;
             C$.foreach(data,function(name,val) {
                 this.build_item(name,val);
             },this);
         },
         clear_element: function() {
             $(this.element).empty();
+            this.children = [];
+            this.data = null;
         },
         build_item: function(name,data) {
             var item = C$.Class(this.explorer_item);
@@ -629,6 +651,15 @@
         explorer_item: 'PlaylistExplorerItem',
         init: function(parent) {
             this._super(parent);
+            var self = this;
+            this.attach_event('onPlaylistAdd',function(data) {
+                self.on_playlist_add(data);
+            });
+        },
+        on_playlist_add: function(data) {
+            C$.foreach(data,function(i,v) {
+                this.build_item(this.children.length,v);
+            },this);
         }
     });
 

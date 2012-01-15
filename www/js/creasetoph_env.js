@@ -171,6 +171,25 @@
             }
             return url.join('&');
         },
+        string: {
+            capitalize: function(str) {
+                var ret = [];
+                C$.foreach(str.split(' '),function(i,v) {
+                    ret.push(v.charAt(0).toUpperCase() + v.slice(1));
+                },this);
+                return ret.join(' ');
+            },
+            trim: function(str) {
+                str = str.replace(/^\s+/, '');
+                for (var i = str.length - 1; i >= 0; i--) {
+                    if (/\S/.test(str.charAt(i))) {
+                        str = str.substring(0, i + 1);
+                        break;
+                    }
+                }
+                return str;
+            }
+        },
         is_array: function(obj) {
             return obj instanceof Array;
         },

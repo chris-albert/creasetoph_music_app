@@ -4,7 +4,7 @@
         swf_location: '/flash/index/audio.swf',
         object_id   : 'CreasetophFlashObject',
         flash_id    : 'CreasetophFlashPlayer',
-        flash_obj   : {},
+        flash_obj   : null,
         init: function() {
             var movie_element = "",element;
             movie_element += '<object type="application/x-shockwave-flash" data="' + this.swf_location + '" width="0" height="0" id="' + this.object_id + '">';
@@ -23,30 +23,30 @@
          */
         listeners: {
             on_open: function() {
-                console.log('on_open');
+                C$.logger('on_open');
             },
             on_complete: function() {
-                console.log('on_complete');
+                C$.logger('on_complete');
             },
             on_end: function() {
-                console.log('on_end');
+                C$.logger('on_end');
                 C$.find_object('PlaylistController').prototype.next_playlist();
             },
             on_id3: function(id3) {
-                console.log(id3);
-                console.log('on_id3');
+                C$.logger(id3);
+                C$.logger('on_id3');
             },
             on_play: function() {
-                console.log('on_play');
+                C$.logger('on_play');
             },
             on_pause: function(time) {
-                console.log('Paused at: ' + time);
+                C$.logger('Paused at: ' + time);
             },
             on_flash_load: function() {
-                console.log('flash_loaded');
+                C$.logger('flash_loaded');
             },
             on_update: function(info) {
-                C$.find_object('PlaylistController').prototype.update_player(info);
+               
             }
         },
         load: function(url) {
@@ -240,6 +240,8 @@
     C$.classify('MusicAppElement','',{
         element: null,
         parent: null,
+        MusicGovernor: null,
+        children: null,
         init: function(parent) {
             if(typeof parent !== 'undefined') {
                 this.parent = parent;
@@ -253,8 +255,6 @@
     });
 
     C$.classify('SideBarController','MusicAppElement',{
-        children: null,
-        element: null,
         init: function(parent) {
             this._super(parent);
         },
@@ -285,12 +285,9 @@
     });
 
     C$.classify('SideBarItem','MusicAppElement',{
-        children: null,
-        element: null,
         children_element: null,
         add_button: null,
         name: null,
-        parent: null,
         init: function(parent) {
             this._super(parent);
         },
@@ -407,6 +404,8 @@
         title_index: ['Albums','Tracks'],
         title: '',
         depth: 0,
+        match_pattern: new RegExp(/(^\d*|_|\.mp3$)/g),
+
         init: function(parent,children_data) {
             this._super(parent);
             this.children_data = children_data;
@@ -415,7 +414,7 @@
             this.name = name;
             var html = '<div class="explorer_item">' +
                             '<div class="music_button hbox">' +
-                                '<span class="explorer_text hbox box-flex">' + name + '</span>' +
+                                '<span class="explorer_text hbox box-flex">' + this.format_name(name) + '</span>' +
                                 '<div class="explorer_buttons hbox box-align-center">' +
                                     '<div class="small_play_button">' +
                                         '<div class="small_play_button_triangle"></div>' +
@@ -495,6 +494,10 @@
         hide_children: function() {
             this.children_hidden = true;
             $(this.children_element).css({"display":"none"});
+        },
+        format_name:function(name) {
+            var str = name.replace(this.match_pattern,' ')
+            return C$.string.capitalize(C$.string.trim(str));
         }
     });
 

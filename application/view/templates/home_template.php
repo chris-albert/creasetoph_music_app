@@ -3,7 +3,7 @@
     <div class="music_container vbox box-pack-start">
         <div class="status_bar box"></div>
         <div class="controlls_container box">
-            <div class="player_container">
+            <div class="player_container" id="player">
                 <div class="player_top">
                     <div class="large_play_button music_button">
                         <div class="play_triangle"></div>

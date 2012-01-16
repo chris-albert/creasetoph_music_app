@@ -63,11 +63,21 @@
         }
     });
 
-    C$.classify('SoundController','',{
+    C$.classify('SoundController','EventDelegator',{
         Sound: null,
-        init: function() {
+        init: function(parent) {
             var sound = C$.Class('Sound');
             this.Sound = new sound();
+            this.parent = parent;
+            this.attach_event('onPlay',function(index,name) {
+                this.on_play(index,name);
+            },this);
+        },
+        on_play: function(index,name) {
+            this.get_playlist_item(index,name);
+        },
+        get_playlist_item: function(index,name) {
+            debugger;
         }
     });
 
@@ -179,10 +189,11 @@
         add_to_playlist: function(name,data) {
             if(typeof this.playlists[name] === 'undefined') {
                 this.create_playlist(name,data);
+            }else {
+                C$.foreach(data,function(i,v) {
+                    this.playlists[name].add_to_playlist(v);
+                },this);
             }
-            C$.foreach(data,function(i,v) {
-                this.playlists[name].add_to_playlist(v);
-            },this);
         }
     });
     
@@ -197,7 +208,8 @@
                 'LibrarySideBarController',
                 'PlaylistSideBarController',
                 'LibraryController',
-                'PlaylistController'
+                'PlaylistController',
+                'PlayerController'
             ]);
             this.fetch_config();
         },
@@ -259,8 +271,8 @@
         get_governor_config: function() {
             return this.MusicGovernor.get_config()[this.config_field];
         },
-        set_explorer: function(data) {
-            this.fire_event('on' + this.explorer + 'SetExplorer',data);
+        set_explorer: function(name,data) {
+            this.fire_event('on' + this.explorer + 'SetExplorer',name,data);
         }
     });
 
@@ -369,7 +381,7 @@
         },
         set_explorer: function(name) {
             this.selected_item = name;
-            this._super(this.get_governor_config()[name]);
+            this._super(name,this.get_governor_config()[name]);
         },
         get_current_list: function() {
             return this.config[this.selected_item];
@@ -381,11 +393,8 @@
         explorer: 'PlaylistController',
         config_field: 'playlists',
         config: null,
-        playlists_model: null,
         init: function(parent) {
             this._super(parent);
-//            var playlists_model = C$.Class('PlaylistsModel');
-//            this.playlists_model = new playlists_model();
             this.attach_event('onExplorerItemAddClicked',function(data) {
                 this.onPlaylistAdd(data);
             },this);
@@ -394,14 +403,13 @@
             this.config = this.get_governor_config();
             this.config['Now Playing'] = [];
             var items = C$.foreach(this.config,function(name,value) {
-//                this.playlists_model.create_playlist(name,value);
                 return name;
             },this);
             this._super(items);
         },
         set_explorer: function(name) {
             this.selected_item = name;
-            this._super(this.config[name]);
+            this._super(name,this.config[name]);
         },
         onPlaylistAdd: function(data) {
             switch(data.selected_data.length) {
@@ -454,7 +462,6 @@
         add_to_playlist: function(data) {
             if(this.selected_item !== '') {
                 this.config[this.selected_item].push(data);
-//                this.playlists_model.add_to_playlist(this.selected_item,data);
             }
             return data;
         }
@@ -488,9 +495,10 @@
                     this.hide_children();
                 }
             }else {
-                
+                this.item_click();
             }
         },
+        item_click: function() {},
         has_children: function() {
             return this.children.length !== 0;
         },
@@ -574,7 +582,7 @@
         },
         build_header: function(title) {
             var html = '<div class="explorer_item_header">' +
-                                    '<span class="explorer_text">' + title + '</span>' +
+                            '<span class="explorer_text">' + title + '</span>' +
                        '</div>';
             return $().elify(html);
         },
@@ -630,6 +638,7 @@
                             '</div>' +
                         '</div>';
             this.element = $().elify(html);
+            this.attach_events();
             return this.element;
         },
         format_name: function(data) {
@@ -638,6 +647,9 @@
                 data.album,
                 this._super(data.track)
             ].join(' - ');
+        },
+        item_click: function() {
+            this.fire_event('onPlay',this.name,this.parent.name);
         }
     });
 
@@ -646,21 +658,23 @@
         init: function(parent) {
             this._super(parent);
             this.data = null;
-            this.attach_event('on' + this.class_name + 'SetExplorer',function(data) {
-                this.set_content(data);
+            this.attach_event('on' + this.class_name + 'SetExplorer',function(name,data) {
+                this.set_content(name,data);
             },this);
         },
-        set_content: function(data) {
+        set_content: function(name,data) {
             this.clear_element();
+            this.name = name;
             this.data = data;
-            C$.foreach(data,function(name,val) {
-                this.build_item(name,val);
+            C$.foreach(data,function(k,val) {
+                this.build_item(k,val);
             },this);
         },
         clear_element: function() {
             $(this.element).empty();
             this.children = [];
             this.data = null;
+            this.name = null;
         },
         build_item: function(name,data) {
             var item = C$.Class(this.explorer_item);
@@ -695,6 +709,14 @@
         }
     });
 
+    C$.classify('PlayerController','MusicAppElement',{
+        id: 'player',
+        init: function(parent) {
+            this._super(parent);
+            
+        }
+    });
+    
     C$.ready(function() {
         var governor = C$.Class('MusicGovernor');
         governor = new governor()

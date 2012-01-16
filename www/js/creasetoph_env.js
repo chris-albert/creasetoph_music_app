@@ -195,8 +195,9 @@
         },
         active_ajax: 0,
         total_ajax: 0,
-        ajax: function(url,callback,post_vars,scope,ret_text) {
+        ajax: function(url,callback,scope,post_vars,ret_text) {
             ret_text = ret_text || false;
+            scope = scope || this;
             var method = (post_vars === null) ? 'GET' : 'POST',
                 ret,
                 createXhrObject =  function() {
@@ -228,11 +229,7 @@
                     }else {
                         ret = xhr.responseText;
                     }
-                    if(scope) {
-                        scope[callback](ret);
-                    }else {
-                        callback(ret);
-                    }
+                    callback.call(scope,ret);
                 }else {
                     //TODO ajax error
                 }
@@ -879,11 +876,15 @@
                         break;
                 }
             },
-            event: function(event,func) {
+            event: function(event,func,scope) {
                 if(typeof this.addEventListener !== 'undefined') {
-                    this.addEventListener(event,func,true);
+                    this.addEventListener(event,function(a,b,c,d) {
+                        func.call(scope,a,b,c,d)
+                    },true);
                 }else if(typeof this.attachEvent !== 'undefined') {
-                    this.attachEvent('on' + event,func);
+                    this.attachEvent('on' + event,function(a,b,c,d) {
+                        func.call(scope,a,b,c,d)
+                    });
                 }
                 return this;
             },
@@ -895,8 +896,8 @@
                 }
                 return this;
             },
-            ajax: function(url,callback,post_vars,scope) {
-                C$.ajax(url,callback,post_vars,scope);
+            ajax: function(url,callback,scope,post_vars) {
+                C$.ajax(url,callback,scope,post_vars);
                 return this;
             }
         }

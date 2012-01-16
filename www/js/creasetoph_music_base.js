@@ -144,50 +144,56 @@
         }
     });
 
-    C$.classify('PlaylistsModel','',{
-        init: function() {
-            this.playlists = {};
-        },
-        create_playlist: function(name,data) {
-            var playlist = C$.Class('PlaylistModel');
-            this.playlists[name] = new playlist(data)
-        },
-        add_to_playlist: function(name,data) {
-            this.playlists[name].add_to_playlist(data);
-        }
-    });
-
     C$.classify('EventDelegator','',{
         callbacks: {},
-        attach_event: function(event,callback) {
+        attach_event: function(event,callback,scope) {
             if(typeof this.callbacks[event] === 'undefined') {
                 this.callbacks[event] = [];
             }
-            this.callbacks[event].push(callback);
+            this.callbacks[event].push(function(a,b,c,d) {
+                callback.call(scope,a,b,c,d);
+            });
             return this.callbacks[event].length - 1;
-
-            return null;
         },
-        fire_event: function(event,scope,a,b,c,d) {
-            scope = scope || this;
+        fire_event: function(event,a,b,c,d) {
             C$.logger("Firing event: " + event);
             if(typeof this.callbacks[event] !== 'undefined') {
                 C$.foreach(this.callbacks[event],function(index,func) {
-                    func.call(scope,a,b,c,d);
+                    func(a,b,c,d);
                 });
             }
         }
     });
 
+    C$.classify('PlaylistsModel','EventDelegator',{
+        init: function() {
+            this.playlists = {};
+            this.attach_event('onPlaylistAdd',function(data,name) {
+                this.add_to_playlist(name,data);
+            },this);
+        },
+        create_playlist: function(name,data) {
+            var playlist = C$.Class('PlaylistModel');
+            this.playlists[name] = new playlist(data);
+        },
+        add_to_playlist: function(name,data) {
+            if(typeof this.playlists[name] === 'undefined') {
+                this.create_playlist(name,data);
+            }
+            C$.foreach(data,function(i,v) {
+                this.playlists[name].add_to_playlist(v);
+            },this);
+        }
+    });
+    
     C$.classify('MusicGovernor','EventDelegator',{
         config_url: "http://musicwebserver/music/fetch",
         config: null,
-        init: function() {
-        },
+        init: function() {},
         load_app: function() {
             this.attach_children([
                 'SoundController',
-                'PlaylistModel',
+                'PlaylistsModel',
                 'LibrarySideBarController',
                 'PlaylistSideBarController',
                 'LibraryController',
@@ -202,11 +208,10 @@
             },this);
         },
         fetch_config: function() {
-            var self = this;
             C$.ajax(this.config_url,function(ret) {
-                self.config = eval(ret);
-                self.fire_event('onConfigFetch')
-            });
+                this.config = eval(ret);
+                this.fire_event('onConfigFetch')
+            },this);
         },
         get_config: function() {
             return this.config;
@@ -235,10 +240,9 @@
         config: null,
         init: function(parent) {
             this._super(parent);
-            var self = this;
             this.attach_event('onConfigFetch',function() {
-                self.build_list();
-            });
+                this.build_list();
+            },this);
         },
         build_list: function(items) {
             var item = this.add_list_item(this.config_field.charAt(0).toUpperCase() + this.config_field.slice(1));
@@ -256,7 +260,7 @@
             return this.MusicGovernor.get_config()[this.config_field];
         },
         set_explorer: function(data) {
-            this.fire_event('on' + this.explorer + 'SetExplorer',this,data);
+            this.fire_event('on' + this.explorer + 'SetExplorer',data);
         }
     });
 
@@ -302,10 +306,9 @@
             },this);
         },
         attach_events: function() {
-            var self = this;
             $('.explorer_text',this.element)[0].event('click',function(e) {
-                self.click(e);
-            });
+                this.click(e);
+            },this);
         },
         has_children: function() {
             return this.children.length !== 0;
@@ -323,7 +326,7 @@
         },
         set_explorer: function() {
             var obj = this;
-            this.fire_event('onSideBarItemSetExplorer',this,this.name);
+            this.fire_event('onSideBarItemSetExplorer',this.name);
             while(typeof obj.parent !== 'undefined') {
                 if(obj.parent.parent_class === 'SideBarController') {
                     obj.parent.set_explorer(this.name);
@@ -335,12 +338,12 @@
         show_children: function() {
             this.children_hidden = false;
             $(this.children_element).css({"display":"block"});
-            this.fire_event('onSideBarItemShow',this,this.name);
+            this.fire_event('onSideBarItemShow',this.name);
         },
         hide_children: function() {
             this.children_hidden = true;
             $(this.children_element).css({"display":"none"});
-            this.fire_event('onSideBarItemHide',this,this.name);
+            this.fire_event('onSideBarItemHide',this.name);
         },
         show_add_button: function() {
             //this.add_button.css({'display':'inline-block'});
@@ -381,18 +384,17 @@
         playlists_model: null,
         init: function(parent) {
             this._super(parent);
-            var self = this,
-                playlists_model = C$.Class('PlaylistsModel');
-            this.playlists_model = new playlists_model();
+//            var playlists_model = C$.Class('PlaylistsModel');
+//            this.playlists_model = new playlists_model();
             this.attach_event('onExplorerItemAddClicked',function(data) {
-                self.onPlaylistAdd(data);
-            });
+                this.onPlaylistAdd(data);
+            },this);
         },
         build_list: function() {
             this.config = this.get_governor_config();
             this.config['Now Playing'] = [];
             var items = C$.foreach(this.config,function(name,value) {
-                this.playlists_model.create_playlist(name,value);
+//                this.playlists_model.create_playlist(name,value);
                 return name;
             },this);
             this._super(items);
@@ -415,8 +417,7 @@
                 default:
                     break;
             }
-            debugger;
-            this.fire_event('onPlaylistAdd',this,data);
+            this.fire_event('onPlaylistAdd',data,this.selected_item);
         },
         add_track_to_playlist: function(data) {
             return this.add_to_playlist({
@@ -453,7 +454,7 @@
         add_to_playlist: function(data) {
             if(this.selected_item !== '') {
                 this.config[this.selected_item].push(data);
-                this.playlists_model.add_to_playlist(this.selected_item,data);
+//                this.playlists_model.add_to_playlist(this.selected_item,data);
             }
             return data;
         }
@@ -475,10 +476,9 @@
         build: function() {},
         build_header: function() {},
         attach_events: function() {
-            var self = this;
             $('.explorer_text',this.element)[0].event('click',function(e) {
-                self.click(e);
-            });
+                this.click(e);
+            },this);
         },  
         click: function() {
             if(this.has_children_data()) {
@@ -506,12 +506,12 @@
             if(!this.children_built) {
                 this.build_children();
             }
-            this.fire_event('onExplorerItemShow',this);
+            this.fire_event('onExplorerItemShow');
         },
         hide_children: function() {
             this.children_hidden = true;
             $(this.children_element).css({"display":"none"});
-            this.fire_event('onExplorerItemHide',this);
+            this.fire_event('onExplorerItemHide');
         },
         build_children: function() {
             this.children_built = true;
@@ -580,13 +580,12 @@
         },
         attach_events: function() {
             this._super();
-            var self = this;
             $(this.add_button).event('click',function(e) {
-                self.add_button_click(e);
-            });
+                this.add_button_click(e);
+            },this);
             $(this.play_button).event('click',function(e) {
-                self.play_button_click(e);
-            });
+                this.play_button_click(e);
+            },this);
         },
         gather_data: function() {
             var data = [],
@@ -601,10 +600,10 @@
             };
         },
         play_button_click: function(e) {
-            this.fire_event('onExplorerItemPlayClicked',this,this.gather_data());
+            this.fire_event('onExplorerItemPlayClicked',this.gather_data());
         },
         add_button_click: function(e) {
-            this.fire_event('onExplorerItemAddClicked',this,this.gather_data());
+            this.fire_event('onExplorerItemAddClicked',this.gather_data());
         }
     });
 
@@ -647,10 +646,9 @@
         init: function(parent) {
             this._super(parent);
             this.data = null;
-            var self = this;
             this.attach_event('on' + this.class_name + 'SetExplorer',function(data) {
-                self.set_content(data);
-            });
+                this.set_content(data);
+            },this);
         },
         set_content: function(data) {
             this.clear_element();
@@ -686,10 +684,9 @@
         explorer_item: 'PlaylistExplorerItem',
         init: function(parent) {
             this._super(parent);
-            var self = this;
             this.attach_event('onPlaylistAdd',function(data) {
-                self.on_playlist_add(data);
-            });
+                this.on_playlist_add(data);
+            },this);
         },
         on_playlist_add: function(data) {
             C$.foreach(data,function(i,v) {

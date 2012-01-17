@@ -30,7 +30,6 @@
             },
             on_end: function() {
                 C$.logger('on_end');
-                C$.find_object('PlaylistController').prototype.next_playlist();
             },
             on_id3: function(id3) {
                 C$.logger(id3);
@@ -487,7 +486,7 @@
                 this.click(e);
             },this);
         },  
-        click: function() {
+        click: function(e) {
             if(this.has_children_data()) {
                 if(this.children_hidden) {
                     this.show_children();

@@ -32,5 +32,8 @@
     C$.ready(function() {
         var child = C$.Class('child');
         var obj = new child('asdf');
+        (function() {
+            debugger;
+        })();
     });
 })();

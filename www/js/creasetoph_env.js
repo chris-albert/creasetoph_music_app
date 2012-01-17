@@ -48,7 +48,7 @@
             return null;
         },
         classify: function(class_name,parent_class_name,object) {
-            object['parent_class'] = parent_class_name
+            object['parent_class'] = parent_class_name;
             this.get_class_ns()[class_name] = object;
         },
         funcify: function(class_obj) {
@@ -76,7 +76,7 @@
                             class_obj[key] = (function(super_fn,fn){
                                 return function() {
                                     this._super = super_fn;
-                                    return fn.apply(this, arguments);
+                                    return fn.apply(this,arguments);
                                 };
                            })(value,class_obj[key]);
                         }
@@ -85,11 +85,16 @@
             }
         },
         extend_obj: function(orig_obj,new_obj) {
+            /*
             for(var i in new_obj) {
                 if(new_obj.hasOwnProperty(i)) {
                     orig_obj[i] = new_obj[i];
                 }
             }
+            */
+            this.foreach(new_obj,function(k,v) {
+                orig_obj[k] = v;
+            });
             return orig_obj;
         },
         foreach: function(obj,func,scope) {
@@ -102,6 +107,9 @@
 			}
 			return ret;
 		},
+        args_to_array: function() {
+            return Array.prototype.slice.apply(arguments);
+        },
         ready_funcs: [],
         ready: function(func) {
             this.ready_funcs.push(func);
@@ -159,17 +167,10 @@
             },C$);
             C$.call_ready_funcs();
         },
-        get_elements_by_attribute: function(attribute,root) {
-            root = root || document;
-            var els = $('*[' + attribute + ']:not(.hidden_cache_container *)',root,true);
-            return els;
-        },
         encode_url: function(obj) {
-            var url = [], i;
-            for(i in obj) {
-                url.push(encodeURIComponent(i) + '=' + encodeURIComponent(obj[i]));
-            }
-            return url.join('&');
+            return this.foreach(obj,function(k,v) {
+                return encodeURIComponent(k) + '=' + encodeURIComponent(v);
+            }).join('&');
         },
         string: {
             capitalize: function(str) {

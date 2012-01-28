@@ -15,9 +15,9 @@
                             <li class="player_playing_title">Track:</li>
                         </ul>
                         <ul class="player_playing_content_container">
-                            <li class="player_playing_content">The Beatles</li>
-                            <li class="player_playing_content">The White Album</li>
-                            <li class="player_playing_content">Dear Prudence</li>
+                            <li class="player_playing_content player_artist">The Beatles</li>
+                            <li class="player_playing_content player_album">The White Album</li>
+                            <li class="player_playing_content player_track">Dear Prudence</li>
                         </ul>
                     </div>
                 </div>

@@ -9,7 +9,7 @@
             var movie_element = "",element;
             movie_element += '<object type="application/x-shockwave-flash" data="' + this.swf_location + '" width="0" height="0" id="' + this.object_id + '">';
             movie_element += '  <param name="movie" value="' + this.swf_location + '" />';
-            movie_element += '  <param name="FlashVars" value="js_namespace=window.creasetoph.SoundController.prototype.listeners&debug=false" />';
+            movie_element += '  <param name="FlashVars" value="js_namespace=window.creasetoph.objects.MusicGovernor.SoundController.Sound.listeners&debug=false" />';
             movie_element += '</object>';
 
             element = document.createElement("div");
@@ -64,19 +64,61 @@
 
     C$.classify('SoundController','EventDelegator',{
         Sound: null,
+        base_sound_url: "http://musicwebserver/music/stream",
+        playlists_model: null,
+        playing: false,
+        paused: false,
         init: function(parent) {
             var sound = C$.Class('Sound');
             this.Sound = new sound();
             this.parent = parent;
-            this.attach_event('onPlay',function(index,name) {
-                this.on_play(index,name);
+            this.attach_event('onPlaylistItemClick',function(index,name) {
+                this.play(index,name);
+            },this);
+            this.attach_event("onGovernorLoad",function() {
+                this.playlists_model = this.parent.PlaylistsModel;
             },this);
         },
-        on_play: function(index,name) {
-            this.get_playlist_item(index,name);
+        play: function(index,name) {
+            if(this.paused) {
+                this.Sound.play();
+                this.paused = false;
+            }else {
+                if(this.playing) {
+                    this.stop();
+                }
+                var item = this.get_playlist_item(index,name);
+                if(item !== null) {
+                    this.Sound.load(this.get_url(item));
+                    this.Sound.play();
+                    this.fire_event('onPlay',item);
+                }
+            }
+            this.playing = true;
+        },
+        pause: function() {
+            if(this.playing) {
+                this.Sound.pause();
+                this.paused = true;
+                this.playing = false;
+            }
+        },
+        stop: function() {
+            if(this.playing) {
+                this.Sound.stop();
+                this.playing = false;
+                this.paused = false;
+            }
+        },
+        get_url: function(item) {
+            return this.base_sound_url + "/" + item.artist + "/" + item.album + "/" + item.track;
         },
         get_playlist_item: function(index,name) {
-            debugger;
+            if(typeof this.playlists_model.playlists[name] !== "undefined") {
+                this.playlists_model.playlists[name].set_current_track_index(index);
+                return this.playlists_model.playlists[name].get_current_track();
+            }
+            return null;
         }
     });
 
@@ -139,6 +181,9 @@
         },
         get_current_track: function() {
             return this.playlist.tracks[this.playlist.current];
+        },
+        set_current_track_index: function(index) {
+            this.playlist.current = index;
         },
         format_time: function(milliseconds) {
             var secs = Math.round(milliseconds / 1000),
@@ -211,6 +256,7 @@
                 'PlayerController'
             ]);
             this.fetch_config();
+            this.fire_event("onGovernorLoad");
         },
         attach_children: function(children) {
             C$.foreach(children,function(k,v) {
@@ -648,7 +694,7 @@
             ].join(' - ');
         },
         item_click: function() {
-            this.fire_event('onPlay',this.name,this.parent.name);
+            this.fire_event('onPlaylistItemClick',this.name,this.parent.name);
         }
     });
 
@@ -710,9 +756,37 @@
 
     C$.classify('PlayerController','MusicAppElement',{
         id: 'player',
+        playlists_model: null,
+        match_pattern: new RegExp(/(^\d*|_|\.mp3$)/g),
         init: function(parent) {
             this._super(parent);
-            
+            this.attach_event('onPlay',function(item) {
+                this.on_play(item);
+            },this);
+            this.attach_event("onGovernorLoad",function() {
+                this.playlists_model = this.parent.PlaylistsModel;
+            },this);
+            this.attach_elements();
+        },
+        attach_elements: function() {
+            this.play_button = $('.large_play_button',this.element)[0];
+            this.prev_button = $('.player_prev_button',this.element)[0];
+            this.next_button = $('.player_next_button',this.element)[0];
+            this.artist = $('.player_artist',this.element)[0];
+            this.album = $('.player_album',this.element)[0];
+            this.track = $('.player_track',this.element)[0];
+        },
+        on_play: function(item) {
+            this.set_info(item);
+        },
+        set_info: function(item) {
+            this.artist.set(this.format_name(item.artist));
+            this.album.set(this.format_name(item.album));
+            this.track.set(this.format_name(item.track));
+        },
+        format_name:function(name) {
+            var str = name.replace(this.match_pattern,' ')
+            return C$.string.capitalize(C$.string.trim(str));
         }
     });
     

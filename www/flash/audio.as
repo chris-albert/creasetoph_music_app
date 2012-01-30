@@ -152,8 +152,10 @@ package {
                         break;
                     case 'update':
                         params = {
-                            position: this.get_position(),
-                            duration: this.get_length()
+                            position   : this.get_position(),
+                            duration   : this.get_length(),
+                            bytesLoaded: this.get_bytes_loaded(),
+                            bytesTotal : this.get_bytes_total()
                         };
                         break;
                     default:

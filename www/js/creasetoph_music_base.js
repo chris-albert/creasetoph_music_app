@@ -42,7 +42,7 @@
             this.fire_event('onFlashLoad');
         },
         on_update: function(info) {
-            //this.fire_event('onSoundUpdate');
+            this.fire_event('onSoundUpdate',info);
         },
         //Used to control flash bridge
         load: function(url) {
@@ -225,6 +225,11 @@
             });
             return this.callbacks[event].length - 1;
         },
+        attach_events: function(events,scope) {
+            C$.foreach(events,function(event,callback) {
+                this.attach_event(event,scope[callback],scope);
+            },this);
+        },
         fire_event: function(event,a,b,c,d) {
             C$.logger("Firing event: " + event);
             if(typeof this.callbacks[event] !== 'undefined') {
@@ -240,20 +245,12 @@
         repeat: true,
         init: function() {
             this.playlists = {};
-            this.attach_event('onPlaylistAdd',function(data,name) {
-                this.add_to_playlist(name,data);
-            },this);
-            this.attach_event('onPlaylistItemClick',function(index,name) {
-                this.on_play(index,name);
-            },this);
-            this.attach_event('onNextClick',function() {
-                this.on_next();
-            },this);
-            this.attach_event('onPrevClick',function() {
-                this.on_prev();
-            },this);
-            this.attach_event('onSoundEnd',function() {
-                this.on_next();
+            this.attach_events({
+                onPlaylistAdd      : 'add_to_playlist',
+                onPlaylistItemClick: 'on_play',
+                onNextClick        : 'on_next',
+                onPrevClick        : 'on_prev',
+                onSoundEnd         : 'on_next'
             },this);
         },
         on_play: function(index,name) {
@@ -287,7 +284,7 @@
             var playlist = C$.Class('PlaylistModel');
             this.playlists[name] = new playlist(data);
         },
-        add_to_playlist: function(name,data) {
+        add_to_playlist: function(data,name) {
             if(typeof this.playlists[name] === 'undefined') {
                 this.create_playlist(name,data);
             }else {
@@ -822,31 +819,32 @@
         artist          : null,
         album           : null,
         track           : null,
+        seeker          : null,
+        loaded_status   : null,
         init: function(parent) {
             this._super(parent);
-            this.attach_event('onPlaylistChange',function(item) {
-                this.set_info(item);
-            },this);
-            this.attach_event('onPlay',function() {
-                this.show_pause();
-            },this);
-            this.attach_event('onPause',function() {
-                this.show_play();
+            this.attach_events({
+                onPlaylistChange: 'set_info',
+                onPlay          : 'show_pause',
+                onPause         : 'show_play',
+                onSoundUpdate   : 'update_player'
             },this);
             this.attach_elements();
         },
         attach_elements: function() {
-            this.play_button = $('.large_play_button',this.element)[0];
-            this.play_triangle = $('.play_triangle',this.play_button)[0];
+            this.play_button      = $('.large_play_button',this.element)[0];
+            this.play_triangle    = $('.play_triangle',this.play_button)[0];
             this.pause_rectangles = $('.pause_rectangles',this.play_button)[0];
-            this.prev_button = $('.player_prev_button',this.element)[0];
-            this.next_button = $('.player_next_button',this.element)[0];
-            this.artist = $('.player_artist',this.element)[0];
-            this.album = $('.player_album',this.element)[0];
-            this.track = $('.player_track',this.element)[0];
-            this.attach_events();
+            this.prev_button      = $('.player_prev_button',this.element)[0];
+            this.next_button      = $('.player_next_button',this.element)[0];
+            this.artist           = $('.player_artist',this.element)[0];
+            this.album            = $('.player_album',this.element)[0];
+            this.track            = $('.player_track',this.element)[0];
+            this.seeker           = $('.player_status_seeker',this.element)[0];
+            this.loaded_status    = $('.player_status_bar_progress',this.element)[0];
+            this.attach_element_events();
         },
-        attach_events: function() {
+        attach_element_events: function() {
             this.play_button.event('click',function() {
                 this.on_play_click();
             },this);
@@ -879,8 +877,22 @@
             this.album.set(this.format_name(item.album));
             this.track.set(this.format_name(item.track));
         },
+        update_player: function(info) {
+            var percent_complete = info.position / info.duration,
+                width = 302,
+                left = Math.round(percent_complete * (width - 37)),
+                loaded;
+            this.seeker.css({
+                'left': left + 'px'
+            });
+            if(info.bytesTotal >= info.bytesLoaded) {
+                this.loaded_status.css({
+                    width: Math.round((info.bytesLoaded / info.bytesTotal) * 100) + "%"
+                });
+            }
+        },
         format_name:function(name) {
-            var str = name.replace(this.match_pattern,' ')
+            var str = name.replace(this.match_pattern,' ');
             return C$.string.capitalize(C$.string.trim(str));
         }
     });

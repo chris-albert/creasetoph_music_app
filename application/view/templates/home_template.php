@@ -7,6 +7,10 @@
                 <div class="player_top">
                     <div class="large_play_button music_button">
                         <div class="play_triangle"></div>
+                        <div class="pause_rectangles" style="display:none;">
+                            <div class="pause_rectangle_left"></div>
+                            <div class="pause_rectangle_right"></div>
+                        </div>
                     </div>
                     <div class="player_playing_container">
                         <ul class="player_playing_title_container">
@@ -15,9 +19,9 @@
                             <li class="player_playing_title">Track:</li>
                         </ul>
                         <ul class="player_playing_content_container">
-                            <li class="player_playing_content player_artist">The Beatles</li>
-                            <li class="player_playing_content player_album">The White Album</li>
-                            <li class="player_playing_content player_track">Dear Prudence</li>
+                            <li class="player_playing_content player_artist"></li>
+                            <li class="player_playing_content player_album"></li>
+                            <li class="player_playing_content player_track"></li>
                         </ul>
                     </div>
                 </div>

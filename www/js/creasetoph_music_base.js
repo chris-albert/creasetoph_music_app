@@ -1,15 +1,16 @@
 (function() {
-    
-     C$.classify('Sound','',{
+     C$.classify('Sound','EventDelegator',{
         swf_location: '/flash/index/audio.swf',
         object_id   : 'CreasetophFlashObject',
         flash_id    : 'CreasetophFlashPlayer',
         flash_obj   : null,
         init: function() {
             var movie_element = "",element;
-            movie_element += '<object type="application/x-shockwave-flash" data="' + this.swf_location + '" width="0" height="0" id="' + this.object_id + '">';
+            movie_element += '<object type="application/x-shockwave-flash" data="' + this.swf_location;
+            movie_element += '" width="0" height="0" id="' + this.object_id + '">';
             movie_element += '  <param name="movie" value="' + this.swf_location + '" />';
-            movie_element += '  <param name="FlashVars" value="js_namespace=window.creasetoph.objects.MusicGovernor.SoundController.Sound.listeners&debug=false" />';
+            movie_element += '  <param name="FlashVars" value="js_namespace=window.creasetoph.objects.';
+            movie_element += 'MusicGovernor.SoundController.Sound&debug=false" />';
             movie_element += '</object>';
 
             element = document.createElement("div");
@@ -18,36 +19,32 @@
             document.body.appendChild(element);
             this.flash_obj = document[this.object_id];
         },
-        /**
-         * This is used by the flash bridge to do callbacks
-         */
-        listeners: {
-            on_open: function() {
-                C$.logger('on_open');
-            },
-            on_complete: function() {
-                C$.logger('on_complete');
-            },
-            on_end: function() {
-                C$.logger('on_end');
-            },
-            on_id3: function(id3) {
-                C$.logger(id3);
-                C$.logger('on_id3');
-            },
-            on_play: function() {
-                C$.logger('on_play');
-            },
-            on_pause: function(time) {
-                C$.logger('Paused at: ' + time);
-            },
-            on_flash_load: function() {
-                C$.logger('flash_loaded');
-            },
-            on_update: function(info) {
-                C$.logger('on_update');
-            }
+        //This is used by the flash bridge to do callbacks
+        on_open: function() {
+            this.fire_event('onSoundOpen');
         },
+        on_complete: function() {
+            this.fire_event('onSoundComplete');
+        },
+        on_end: function() {
+            this.fire_event('onSoundEnd');
+        },
+        on_id3: function(id3) {
+            this.fire_event('onSoundId3');
+        },
+        on_play: function() {
+            this.fire_event('onSoundPlay');
+        },
+        on_pause: function(time) {
+            this.fire_event('onSoundPause');
+        },
+        on_flash_load: function() {
+            this.fire_event('onFlashLoad');
+        },
+        on_update: function(info) {
+            //this.fire_event('onSoundUpdate');
+        },
+        //Used to control flash bridge
         load: function(url) {
             this.flash_obj.load(url);
         },
@@ -59,27 +56,53 @@
         },
         pause: function() {
             this.flash_obj.pause();
+        },
+        //Used to get info from flash bridge
+        get_bytes_loaded: function() {
+            return this.flash_obj.bytesLoaded();
+        },
+        get_bytes_total: function() {
+            return this.flash_obj.bytesTotal();
+        },
+        get_length: function() {
+            return this.flash_obj.length();
+        },
+        get_position: function() {
+            return this.flash_obj.position();
+        },
+        get_left_peak: function() {
+            return this.flash_obj.leftPeak();
+        },
+        get_right_peak: function() {
+            return this.flash_obj.rightPeak();
+        },
+        get_is_buffering: function() {
+            return this.flash_obj.isBuffering();
         }
     });
+
 
     C$.classify('SoundController','EventDelegator',{
         Sound: null,
         base_sound_url: "http://musicwebserver/music/stream",
-        playlists_model: null,
         playing: false,
         paused: false,
         init: function(parent) {
             var sound = C$.Class('Sound');
             this.Sound = new sound();
             this.parent = parent;
-            this.attach_event('onPlaylistItemClick',function(index,name) {
-                this.play(index,name);
+            this.attach_event('onPlaylistChange',function(item) {
+                this.play(item);
             },this);
-            this.attach_event("onGovernorLoad",function() {
-                this.playlists_model = this.parent.PlaylistsModel;
+            this.attach_event('onPlayClick',function() {
+                if(this.playing) {
+                    this.pause();
+                }else if(this.paused) {
+                    this.play();
+                }
             },this);
         },
-        play: function(index,name) {
+        play: function(item) {
             if(this.paused) {
                 this.Sound.play();
                 this.paused = false;
@@ -87,13 +110,12 @@
                 if(this.playing) {
                     this.stop();
                 }
-                var item = this.get_playlist_item(index,name);
                 if(item !== null) {
                     this.Sound.load(this.get_url(item));
                     this.Sound.play();
-                    this.fire_event('onPlay',item);
                 }
             }
+            this.fire_event('onPlay',item);
             this.playing = true;
         },
         pause: function() {
@@ -102,6 +124,7 @@
                 this.paused = true;
                 this.playing = false;
             }
+            this.fire_event('onPause');
         },
         stop: function() {
             if(this.playing) {
@@ -112,13 +135,6 @@
         },
         get_url: function(item) {
             return this.base_sound_url + "/" + item.artist + "/" + item.album + "/" + item.track;
-        },
-        get_playlist_item: function(index,name) {
-            if(typeof this.playlists_model.playlists[name] !== "undefined") {
-                this.playlists_model.playlists[name].set_current_track_index(index);
-                return this.playlists_model.playlists[name].get_current_track();
-            }
-            return null;
         }
     });
 
@@ -134,12 +150,12 @@
             },this);
         },
         next: function() {
-            	this.next_playlist();
-            	return this;
+            this.next_playlist();
+            return this;
         },
         prev: function() {
-            	this.prev_playlist();
-            	return this;
+            this.prev_playlist();
+            return this;
         },
         add_to_playlist: function(obj) {
             this.playlist.tracks.push(obj);
@@ -220,11 +236,52 @@
     });
 
     C$.classify('PlaylistsModel','EventDelegator',{
+        current_playlist: null,
+        repeat: true,
         init: function() {
             this.playlists = {};
             this.attach_event('onPlaylistAdd',function(data,name) {
                 this.add_to_playlist(name,data);
             },this);
+            this.attach_event('onPlaylistItemClick',function(index,name) {
+                this.on_play(index,name);
+            },this);
+            this.attach_event('onNextClick',function() {
+                this.on_next();
+            },this);
+            this.attach_event('onPrevClick',function() {
+                this.on_prev();
+            },this);
+            this.attach_event('onSoundEnd',function() {
+                this.on_next();
+            },this);
+        },
+        on_play: function(index,name) {
+            var item;
+            if(typeof this.playlists[name] !== 'undefined') {
+                this.current_playlist = this.playlists[name];
+                this.current_playlist.set_current_track_index(index);
+                item = this.current_playlist.get_current_track();
+                this.fire_event('onPlaylistChange',item);
+            }
+        },
+        on_next: function() {
+            if(this.current_playlist.playlist.current < this.current_playlist.playlist.tracks.length - 1) {
+                this.current_playlist.playlist.current++;
+                this.fire_event('onPlaylistChange',this.current_playlist.get_current_track());
+            }else if(this.repeat) {
+                this.current_playlist.playlist.current = 0;
+                this.fire_event('onPlaylistChange',this.current_playlist.get_current_track());
+            }
+        },
+        on_prev: function() {
+            if(this.current_playlist.playlist.current > 0) {
+                this.current_playlist.playlist.current--;
+                this.fire_event('onPlaylistChange',this.current_playlist.get_current_track());
+            }else if(this.repeat) {
+                this.current_playlist.playlist.current = this.current_playlist.playlist.tracks.length - 1;
+                this.fire_event('onPlaylistChange',this.current_playlist.get_current_track());
+            }
         },
         create_playlist: function(name,data) {
             var playlist = C$.Class('PlaylistModel');
@@ -739,7 +796,7 @@
     });
 
     C$.classify('PlaylistController','ExplorerController',{
-        id: 'playlist_explorer',
+        id           : 'playlist_explorer',
         explorer_item: 'PlaylistExplorerItem',
         init: function(parent) {
             this._super(parent);
@@ -755,29 +812,67 @@
     });
 
     C$.classify('PlayerController','MusicAppElement',{
-        id: 'player',
-        playlists_model: null,
-        match_pattern: new RegExp(/(^\d*|_|\.mp3$)/g),
+        id              : 'player',
+        match_pattern   : new RegExp(/(^\d*|_|\.mp3$)/g),
+        play_button     : null,
+        play_triangle   : null,
+        pause_rectangles: null,
+        prev_button     : null,
+        next_button     : null,
+        artist          : null,
+        album           : null,
+        track           : null,
         init: function(parent) {
             this._super(parent);
-            this.attach_event('onPlay',function(item) {
-                this.on_play(item);
+            this.attach_event('onPlaylistChange',function(item) {
+                this.set_info(item);
             },this);
-            this.attach_event("onGovernorLoad",function() {
-                this.playlists_model = this.parent.PlaylistsModel;
+            this.attach_event('onPlay',function() {
+                this.show_pause();
+            },this);
+            this.attach_event('onPause',function() {
+                this.show_play();
             },this);
             this.attach_elements();
         },
         attach_elements: function() {
             this.play_button = $('.large_play_button',this.element)[0];
+            this.play_triangle = $('.play_triangle',this.play_button)[0];
+            this.pause_rectangles = $('.pause_rectangles',this.play_button)[0];
             this.prev_button = $('.player_prev_button',this.element)[0];
             this.next_button = $('.player_next_button',this.element)[0];
             this.artist = $('.player_artist',this.element)[0];
             this.album = $('.player_album',this.element)[0];
             this.track = $('.player_track',this.element)[0];
+            this.attach_events();
         },
-        on_play: function(item) {
-            this.set_info(item);
+        attach_events: function() {
+            this.play_button.event('click',function() {
+                this.on_play_click();
+            },this);
+            this.prev_button.event('click',function() {
+                this.on_prev_click();
+            },this);
+            this.next_button.event('click',function() {
+                this.on_next_click();
+            },this);
+        },
+        show_play: function() {
+            this.pause_rectangles.css({display: 'none'});
+            this.play_triangle.css({display: 'inline-block'});
+        },
+        show_pause: function() {
+            this.play_triangle.css({display: 'none'});
+            this.pause_rectangles.css({display: 'inline-block'});
+        },
+        on_next_click: function() {
+            this.fire_event('onNextClick');
+        },
+        on_prev_click: function() {
+            this.fire_event('onPrevClick');
+        },
+        on_play_click: function() {
+            this.fire_event('onPlayClick');
         },
         set_info: function(item) {
             this.artist.set(this.format_name(item.artist));
@@ -796,6 +891,4 @@
         C$.add_object_to_ns('MusicGovernor',governor);
         governor.load_app();
     });
-    
 })();
-

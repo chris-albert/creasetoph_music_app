@@ -237,12 +237,22 @@
 }
 
 .explorer_side_bar {
-   border: 1px solid #252424;
-   /*padding: 5px;*/
+    border: 1px solid #252424;
+    /*padding: 5px;*/
 }
 
 .explorer_content {
-   border: 1px solid #252424;
+    border: 1px solid #252424;
+    height: 100%;
+    overflow-y: hidden;
+}
+
+.explorer_content_inner {
+}
+
+.explorer_scroll_container {
+    width: 10px;
+    height:100%;
 }
 
 .side_bar_item {

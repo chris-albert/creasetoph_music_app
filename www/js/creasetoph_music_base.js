@@ -250,7 +250,8 @@
                 onPlaylistItemClick: 'on_play',
                 onNextClick        : 'on_next',
                 onPrevClick        : 'on_prev',
-                onSoundEnd         : 'on_next'
+                onSoundEnd         : 'on_next',
+                onPlaylistItemMinusClick: 'remove_from_playlist'
             },this);
         },
         on_play: function(index,name) {
@@ -291,6 +292,11 @@
                 C$.foreach(data,function(i,v) {
                     this.playlists[name].add_to_playlist(v);
                 },this);
+            }
+        },
+        remove_from_playlist: function(index,name) {
+            if(typeof this.playlists[name] !== 'undefined') {
+                this.playlists[name].remove_from_playlist(index);
             }
         }
     });
@@ -581,7 +587,7 @@
         },
         build: function() {},
         build_header: function() {},
-        attach_events: function() {
+        attach_element_events: function() {
             $('.explorer_text',this.element)[0].event('click',function(e) {
                 this.click(e);
             },this);
@@ -675,7 +681,7 @@
              this.element = $().elify(html);
              this.add_button = $('.small_add_button',this.element)[0];
              this.play_button = $('.small_play_button',this.element)[0];
-             this.attach_events();
+             this.attach_element_events();
              this.children_element = $('.explorer_item_child',this.element)[0];
              return this.element;
         },
@@ -685,7 +691,7 @@
                        '</div>';
             return $().elify(html);
         },
-        attach_events: function() {
+        attach_element_events: function() {
             this._super();
             $(this.add_button).event('click',function(e) {
                 this.add_button_click(e);
@@ -737,8 +743,29 @@
                             '</div>' +
                         '</div>';
             this.element = $().elify(html);
-            this.attach_events();
+            this.attach_element_events();
             return this.element;
+        },
+        attach_element_events: function() {
+            this._super();
+            $('.small_up_button',this.element)[0].event('click',function(e) {
+                this.on_up_click(e);
+            },this);
+            $('.small_down_button',this.element)[0].event('click',function(e) {
+                this.on_down_click(e);
+            },this);
+            $('.small_add_button',this.element)[0].event('click',function(e) {
+                this.on_minus_click(e);
+            },this);
+        },
+        on_up_click: function(e) {
+            this.fire_event('onPlaylistItemUpClick',this.name,this.parent.name);
+        },
+        on_down_click: function(e) {
+            this.fire_event('onPlaylistItemDownClick',this.name,this.parent.name);
+        },
+        on_minus_click: function(e) {
+            this.fire_event('onPlaylistItemMinusClick',this.name,this.parent.name);
         },
         format_name: function(data) {
             return [
@@ -781,6 +808,12 @@
             $(this.element).appendChild(item.build(name,data));
             this.children.push(item);
             return item;
+        },
+        remove_item: function(index) {
+            if(typeof this.children[index] != 'undefined') {
+                this.element.remove(this.children[index].element);
+                this.children.splice(index,1);
+            }
         }
     });
 
@@ -800,11 +833,17 @@
             this.attach_event('onPlaylistAdd',function(data) {
                 this.on_playlist_add(data);
             },this);
+            this.attach_event('onPlaylistItemMinusClick',function(index,playlist) {
+                this.on_playlist_remove(index,playlist);
+            },this);
         },
         on_playlist_add: function(data) {
             C$.foreach(data,function(i,v) {
                 this.build_item(this.children.length,v);
             },this);
+        },
+        on_playlist_remove: function(index) {
+            this.remove_item(index);
         }
     });
 

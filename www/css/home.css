@@ -252,7 +252,18 @@
 
 .explorer_scroll_container {
     width: 10px;
-    height:100%;
+    position: relative;
+}
+
+.explorer_scroll_bar {
+    height: 30px;
+    width: 100%;
+    background-color: #252424;
+    position: absolute;
+}
+
+.explorer_scroll_bar:hover {
+    cursor: pointer;
 }
 
 .side_bar_item {

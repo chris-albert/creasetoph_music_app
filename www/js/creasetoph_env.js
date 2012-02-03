@@ -878,18 +878,17 @@
                 }
             },
             event: function(event,func,scope) {
+                var new_func = function(a,b,c,d) {
+                    return func.call(scope,a,b,c,d)
+                };
                 if(typeof this.addEventListener !== 'undefined') {
-                    this.addEventListener(event,function(a,b,c,d) {
-                        func.call(scope,a,b,c,d)
-                    },true);
+                    this.addEventListener(event,new_func,true);
                 }else if(typeof this.attachEvent !== 'undefined') {
-                    this.attachEvent('on' + event,function(a,b,c,d) {
-                        func.call(scope,a,b,c,d)
-                    });
+                    this.attachEvent('on' + event,new_func);
                 }
-                return this;
+                return new_func;
             },
-            remove_event: function(event) {
+            remove_event: function(event,func) {
                 if(typeof this.removeEventListener !== 'undefined') {
                     this.removeEventListener(event,func,true);
                 }else if(typeof this.detachEvent !== 'undefined') {

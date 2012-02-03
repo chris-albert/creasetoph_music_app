@@ -168,7 +168,6 @@
             }
         },
         clear_playlist: function() {
-            this.stop();
             this.playlist.tracks = [];
             this.playlist.current = 0;
             return this;
@@ -251,7 +250,8 @@
                 onNextClick        : 'on_next',
                 onPrevClick        : 'on_prev',
                 onSoundEnd         : 'on_next',
-                onPlaylistItemMinusClick: 'remove_from_playlist'
+                onPlaylistItemMinusClick: 'remove_from_playlist',
+                onPlaylistClear         : 'clear_playlist'
             },this);
         },
         on_play: function(index,name) {
@@ -297,6 +297,11 @@
         remove_from_playlist: function(index,name) {
             if(typeof this.playlists[name] !== 'undefined') {
                 this.playlists[name].remove_from_playlist(index);
+            }
+        },
+        clear_playlist: function(name) {
+            if(typeof this.playlists[name] !== 'undefined') {
+                this.playlists[name].clear_playlist();
             }
         }
     });
@@ -501,7 +506,14 @@
         init: function(parent) {
             this._super(parent);
             this.attach_event('onExplorerItemAddClicked',function(data) {
-                this.onPlaylistAdd(data);
+                this.on_playlist_add(data);
+            },this);
+            this.attach_event('onExplorerItemPlayClicked',function(data) {
+                this.fire_event('onPlaylistClear',this.selected_item);
+                this.on_playlist_add(data);
+            },this);
+            this.attach_event('onPlaylistClear',function(name) {
+                this.empty_playlist(name);
             },this);
         },
         build_list: function() {
@@ -516,7 +528,7 @@
             this.selected_item = name;
             this._super(name,this.config[name]);
         },
-        onPlaylistAdd: function(data) {
+        on_playlist_add: function(data) {
             switch(data.selected_data.length) {
                 case 1:
                     data = this.add_artist_to_playlist(data);
@@ -569,6 +581,17 @@
                 this.config[this.selected_item].push(data);
             }
             return data;
+        },
+        remove_from_playlist: function(index) {
+            if(this.selected_item !== '') {
+                delete this.config[this.selected_item][index];
+            }
+        },
+        empty_playlist: function(name) {
+            if(typeof this.config[name] !== 'undefined') {
+                this.config[name] = [];
+            }
+            debugger;
         }
     });
 
@@ -765,7 +788,12 @@
             this.fire_event('onPlaylistItemDownClick',this.name,this.parent.name);
         },
         on_minus_click: function(e) {
-            this.fire_event('onPlaylistItemMinusClick',this.name,this.parent.name);
+            var i = 0,
+                el = this.element;
+            while((el = el.previousSibling) != null) {
+                i++;
+            }
+            this.fire_event('onPlaylistItemMinusClick',i,this.parent.name);
         },
         format_name: function(data) {
             return [
@@ -781,12 +809,15 @@
 
     C$.classify('ExplorerController','MusicAppElement',{
         data: null,
+        modified_event: '',
         init: function(parent) {
             this._super(parent);
             this.data = null;
             this.attach_event('on' + this.class_name + 'SetExplorer',function(name,data) {
                 this.set_content(name,data);
             },this);
+            var scroll_bar = C$.Class('ScrollBar');
+            scroll_bar = new scroll_bar(this.element.parentNode.parentNode,this.modified_event);
         },
         set_content: function(name,data) {
             this.clear_element();
@@ -795,12 +826,14 @@
             C$.foreach(data,function(k,val) {
                 this.build_item(k,val);
             },this);
+            this.modified();
         },
         clear_element: function() {
             $(this.element).empty();
             this.children = [];
             this.data = null;
             this.name = null;
+            this.modified();
         },
         build_item: function(name,data) {
             var item = C$.Class(this.explorer_item);
@@ -814,11 +847,16 @@
                 this.element.remove(this.children[index].element);
                 this.children.splice(index,1);
             }
+            this.modified();
+        },
+        modified: function() {
+            this.fire_event(this.modified_event);
         }
     });
 
     C$.classify('LibraryController','ExplorerController',{
         id: 'library_explorer',
+        modified_event: 'onLibraryModify',
         explorer_item: 'LibraryExplorerItem',
         init: function(parent) {
             this._super(parent);
@@ -828,6 +866,7 @@
     C$.classify('PlaylistController','ExplorerController',{
         id           : 'playlist_explorer',
         explorer_item: 'PlaylistExplorerItem',
+        modified_event: 'onPlaylistModify',
         init: function(parent) {
             this._super(parent);
             this.attach_event('onPlaylistAdd',function(data) {
@@ -836,14 +875,22 @@
             this.attach_event('onPlaylistItemMinusClick',function(index,playlist) {
                 this.on_playlist_remove(index,playlist);
             },this);
+            this.attach_event('onPlaylistClear',function() {
+                this.clear();
+            },this);
         },
         on_playlist_add: function(data) {
             C$.foreach(data,function(i,v) {
                 this.build_item(this.children.length,v);
             },this);
+            this.modified();
         },
         on_playlist_remove: function(index) {
             this.remove_item(index);
+        },
+        clear: function() {
+            this.clear_element();
+            this.modified();
         }
     });
 
@@ -933,6 +980,136 @@
         format_name:function(name) {
             var str = name.replace(this.match_pattern,' ');
             return C$.string.capitalize(C$.string.trim(str));
+        }
+    });
+
+    C$.classify('ScrollBar','EventDelegator',{
+        //elements
+        root_el: null,
+        scroll_bar_container: null,
+        scroll_bar_slider: null,
+        scroll_content_container: null,
+        scroll_content: null,
+        multiplier: 20,
+        mouse_move_listener: null,
+        mouse_up_listener: null,
+        mouse_start_y: null,
+        slider_height: null,
+        slider_height_min: 30,
+        //dimensions
+        init: function(root_el,dimension_event) {
+            this.root_el = root_el;
+            this.attach_elements();
+            this.attach_dimension_events(dimension_event);
+        },
+        attach_dimension_events: function(event) {
+            this.attach_event(event,function() {
+                this.get_dimensions();
+            },this);
+        },
+        attach_elements: function() {
+            this.scroll_bar_container = $('.scroll_bar_container',this.root_el)[0];
+            this.scroll_bar_slider = $('.scroll_bar_slider',this.root_el)[0];
+            this.scroll_content_container = $('.scroll_content_container',this.root_el)[0];
+            this.scroll_content = $('.scroll_content',this.root_el)[0];
+            this.scroll_content_container.event('DOMMouseScroll',function(e) {
+                this.on_scroll(e);
+            },this);
+            this.scroll_content_container.event('mousewheel',function(e) {
+                this.on_scroll(e);
+            },this);
+            this.scroll_bar_slider.event('mousedown',function(e) {
+                this.slider_down(e);
+            },this);
+        },
+        get_dimensions: function() {
+            this.scroll_height = this.scroll_content.scrollHeight;
+            this.height = this.scroll_content_container.clientHeight;
+            var height = (this.height / this.scroll_height) * this.height;
+            if(height < this.slider_height_min) {
+                height = this.slider_height_min;
+            }
+            this.scroll_bar_slider.css({height: height + 'px'});
+            this.slider_height = height;
+        },
+        on_scroll: function(e) {
+            var normalized = e.detail ? -1 * e.detail : e.wheelDelta / 40,
+                delta = normalized * this.multiplier;
+            this.scroll(delta);
+        },
+        slider_down: function(e) {
+            this.mouse_start_y = e.pageY;
+            this.scroll_top_start = this.scroll_bar_slider.style.marginTop.replace('px','');
+            if(this.scroll_top_start === '') {
+                this.scroll_top_start = 0;
+            }else {
+                this.scroll_top_start = parseInt(this.scroll_top_start);
+            }
+            this.mouse_move_listener = $(window.document.body).event('mousemove',this.mouse_move,this);
+            this.mouse_up_listener = $(window.document.body).event('mouseup',this.slider_up,this);
+            e.preventDefault();
+            return false;
+        },
+        slider_up: function(e) {
+            this.mouse_start_y = null;
+            this.scroll_top_start = null;
+            $(window.document.body).remove_event('mousemove',this.mouse_move_listener);
+            $(window.document.body).remove_event('mouseup',this.mouse_up_listener);
+        },
+        mouse_move: function(e) {
+            var delta = this.mouse_start_y - e.pageY,
+                current = this.scroll_bar_slider.style.marginTop.replace('px',''),
+                top;
+            if(current === '') {
+                current = 0;
+            }else {
+                current = parseInt(current);
+            }
+            top = (-1 * delta) + this.scroll_top_start;
+            if(top < 0) {
+                top = 0;
+            }
+            if(top > this.height - this.slider_height) {
+                top = this.height - this.slider_height;
+            };
+            this.move_slider(top);
+            var scroll_percent = top / (this.height - this.slider_height),
+                scroll_diff = -1 * (this.scroll_height - this.height) * scroll_percent;
+            this.move_content(scroll_diff);
+            e.preventDefault();
+            return false;
+        },
+        scroll: function(delta) {
+            var current = this.scroll_content.style.marginTop.replace('px',''),
+                diff,scroll_percent,scroll_diff;
+            if(current === '') {
+                current = 0;
+            }else {
+                current = parseInt(current);
+            }
+            diff = current + delta;
+            if(diff > 0) {
+                diff = 0;
+            }
+            if(diff < (-1*(this.scroll_height - this.height))) {
+                diff = (-1*(this.scroll_height - this.height));
+            }
+            //move content
+            this.move_content(diff);
+            //move slider
+            scroll_percent =(-1*diff) / (this.scroll_height - this.height);
+            scroll_diff = (this.height - this.slider_height) * scroll_percent;
+            this.move_slider(scroll_diff);
+        },
+        move_content: function(top) {
+            this.scroll_content.css({
+                marginTop: top + 'px'
+            });
+        },
+        move_slider: function(top) {
+            this.scroll_bar_slider.css({
+                marginTop: top + 'px'
+            });
         }
     });
     

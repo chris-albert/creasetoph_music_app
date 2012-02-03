@@ -51,16 +51,23 @@
                 </div>
                 <div class="explorer_content_container box-flex-1 vbox">
                     <div class="status_bar status_bar_center"></div>
-                    <div class="explorer_content box-flex hbox">
-                        <div class="explorer_content_inner box-flex-1" id="library_explorer"></div>
-                        <div class="explorer_scroll_container hbox box-align-stretch"></div>
+                    <div class="explorer_content box-flex hbox scroll_content_container">
+                        <div class="explorer_content_inner box-flex-1 scroll_content" id="library_explorer"></div>
+                        <div class="explorer_scroll_container scroll_bar_container">
+                            <div class="explorer_scroll_bar scroll_bar_slider"></div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="explorer_right_container hbox box-flex-1">
                 <div class="explorer_content_container  box-flex-1 vbox">
                     <div class="status_bar status_bar_center"></div>
-                    <div class="explorer_content box-flex" id="playlist_explorer"></div>
+                    <div class="explorer_content box-flex hbox scroll_content_container">
+                        <div class="explorer_content_inner box-flex-1 scroll_content" id="playlist_explorer"></div>
+                        <div class="explorer_scroll_container scroll_bar_container">
+                            <div class="explorer_scroll_bar scroll_bar_slider"></div>
+                        </div>
+                    </div>
                 </div>
                 <div class="explorer_side_bar_container vbox">
                     <div class="status_bar status_bar_right"></div>

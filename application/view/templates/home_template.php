@@ -50,7 +50,9 @@
                     <div class="explorer_side_bar box-flex" id="library_side_bar"></div>
                 </div>
                 <div class="explorer_content_container box-flex-1 vbox">
-                    <div class="status_bar status_bar_center"></div>
+                    <div class="status_bar status_bar_center hbox">
+                        <div class="status_bar_title hbox box-align-center">Test</div>
+                    </div>
                     <div class="explorer_content box-flex hbox scroll_content_container">
                         <div class="explorer_content_inner box-flex-1 scroll_content" id="library_explorer"></div>
                         <div class="explorer_scroll_container scroll_bar_container">

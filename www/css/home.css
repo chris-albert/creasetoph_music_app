@@ -399,3 +399,10 @@
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
 }
+
+.status_bar_title {
+    font-size: 18px;
+    font-family: sans-serif;
+    color: #535252;
+    padding-left: 10px;
+}

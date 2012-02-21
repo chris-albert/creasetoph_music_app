@@ -17,9 +17,11 @@ class IndexController extends BaseController{
         $this->loadSRC($this->_registry->request, array(
             'js/sizzle.js',
             'js/creasetoph_env.js',
-           /* 'js/creasetoph_base.js',
-            'js/creasetoph_dialog.js',*/
-            'js/creasetoph_music_base.js'
+            'js/creasetoph_music_base.js',
+            'js/SideBarController.js',
+            'js/SideBarItem.js',
+            'js/ExplorerController.js',
+            'js/ExplorerItem.js'
         ),'js',true,true);
     }
 	

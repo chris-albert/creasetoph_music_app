@@ -42,22 +42,9 @@ class MusicController extends BaseController{
     public function fetch() {
         echo json_encode(array(
             'libraries' => array(
-                'mine' => $this->getDirStructure($this->music_root, '/\.mp3$/'),
-                'other_library' => $this->getDirStructure($this->music_root, '/\.mp3$/'),
+                'creasetoph' => $this->getDirStructure($this->music_root, '/\.mp3$/')
              ),
             'playlists' => array(
-                'great' => array(
-                    array(
-                        'artist' => 'The Beatles',
-                        'album' => 'The White Album',
-                        'track' => 'Dear Prudence'
-                    ),
-                    array(
-                        'artist' => 'The Beatles',
-                        'album' => 'The White Album',
-                        'track' => 'Obla Dee Obla Da'
-                    )
-                ),
                 'awesome' => array()
             )
         ));

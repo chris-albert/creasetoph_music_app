@@ -626,7 +626,6 @@
                 }else if(type === 'string') {
                     this.setAttribute(attribute,value);
                 }
-
                 return this;
             },
             add_class: function(class_name) {
@@ -645,10 +644,7 @@
                 return this;
             },
             has_class: function(class_name) {
-                if(this.className.indexOf(class_name) === -1) {
-                    return false;
-                }
-                return true;
+                return !(this.className.indexOf(class_name) === -1);
             },
             set: function(text) {
                 switch(this.tagName.toLowerCase()) {
@@ -672,8 +668,10 @@
                         return this.innerHTML;
                 }
             },
-            create: function(new_els) {
-                //TODO: this better
+            create: function(node,css) {
+                var el = $(document.createElement(node));
+                el.css(css);
+                return el;
             },
             elify: function(html) {
                 var tmp_el = document.createElement('div');

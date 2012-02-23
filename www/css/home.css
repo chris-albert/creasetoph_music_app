@@ -194,7 +194,7 @@
 .player_status_bar_progress {
     background-color: #727171;
     height: 100%;
-    width: 50%;
+    width: 0%;
 }
 
 .player_status_seeker {
@@ -204,7 +204,7 @@
     background-color: #8f8f8f;
     position: absolute;
     top: 3px;
-    left: 40px;
+    left: 0px;
 }
 
 .explorer_container {
@@ -405,4 +405,24 @@
     font-family: sans-serif;
     color: #535252;
     padding-left: 10px;
+}
+
+.playlist_add {
+    padding-right: 10px;
+}
+
+.playlist_add > div {
+    cursor: pointer;
+}
+
+input[type="text"] {
+    background-color: #222222;
+    border: 1px solid #CCCCCC;
+    border-radius: 5px 5px 5px 5px;
+    color: #CCCCCC;
+    font-size: 0.7em;
+}
+
+.dialog-question {
+    padding: 10px;
 }

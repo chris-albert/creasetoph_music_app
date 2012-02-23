@@ -221,7 +221,8 @@
                 onPrevClick        : 'on_prev',
                 onSoundEnd         : 'on_next',
                 onPlaylistItemMinusClick: 'remove_from_playlist',
-                onPlaylistClear         : 'clear_playlist'
+                onPlaylistClear         : 'clear_playlist',
+                onPlaylistCreate        : 'create_playlist'
             },this);
         },
         on_play: function(index,name) {
@@ -280,8 +281,8 @@
         config_url: "http://musicwebserver/music/fetch",
         config: null,
         defaults: {
-            playlist: 'Now Playing',
-            library : 'mine'
+            playlist: 'awesome',
+            library : 'creasetoph'
         },
         init: function() {},
         load_app: function() {
@@ -377,6 +378,10 @@
             this.next_button.event('click',function() {
                 this.on_next_click();
             },this);
+            var slider = C$.Class('Slider');
+            slider = new slider(this.seeker,function(){
+
+            },'horizontal');
         },
         show_play: function() {
             this.pause_rectangles.css({display: 'none'});

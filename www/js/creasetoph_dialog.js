@@ -1,15 +1,14 @@
 /**
- * This is where all the base classes for the rest of the application will reside
  * @author creasetoph
  */
 (function() {
-    C$.inherit('CreasetophDialogController','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogController','CreasetophController',{
         dialog: null,
         content: '',
         open_dialog: function(e) {
             if(this.dialog === null) {
-                this.dialog = new creasetoph.CreasetophDialog;
-//                this.dialog.content = this.content;
+                this.dialog = C$.Class('CreasetophDialog');
+                this.dialog = new this.dialog();
                 this.dialog.create_dialog(this,e);
             }
         },
@@ -19,9 +18,9 @@
                 this.dialog = null;
             }
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialog','CreasetophController').prototype = {
+    C$.classify('CreasetophDialog','CreasetophController',{
         dialog      : true,
         append_to   : 'body',
         height      : 0,
@@ -67,15 +66,18 @@
                 $(this.container).add_class(this.custom_base_class);
             }
             if(this.show_header) {
-                this.header = new creasetoph.CreasetophDialogHeader;
-                this.header.setup(this);
+//                this.header = C$.Class('CreasetophDialogHeader');
+//                this.header = new this.header();
+//                this.header.setup(this);
             }
-            this.body = new creasetoph.CreasetophDialogBody;
+            this.body = C$.Class('CreasetophDialogBody');
+            this.body = new this.body();
             this.body.setup(this);
             
             if(this.resizeable) {
-                this.resize = new creasetoph.CreasetophDialogResize;
-                this.resize.setup(this);
+//                this.resize = C$.Class('CreasetophDialogResize');
+//                this.resize = new this.resize();
+//                this.resize.setup(this);
             }
             this.element = this.container;
 //            C$.bind(this.body.element);
@@ -270,9 +272,9 @@
             $(this.body.element).animation = null;
             this.set_un_minimized();
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogHeader','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogHeader','CreasetophController',{
         dialog : null,
         height: 20,
         cursor: 'move',
@@ -354,9 +356,9 @@
             this.bind_events(this.header);
             this.header.style.cursor = this.cursor;
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogCloseBox','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogCloseBox','CreasetophController',{
         Events: {
             'click' : 'onClick'
         },
@@ -379,9 +381,9 @@
         onClick: function(e) {
             this.header.dialog.close();
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogUpBox','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogUpBox','CreasetophController',{
         Events: {
             'click' : 'onClick'
         },
@@ -413,9 +415,9 @@
                 this.header.dialog.minimize();
             }
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogBody','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogBody','CreasetophController',{
         dialog_body_class: 'dialog_body',
         cursor: 'default',
         Events: {},
@@ -442,21 +444,21 @@
             this.set_content(this.dialog.content);
             $(this.body).set_attribute('class',this.dialog_body_class);
             this.dialog.container.appendChild(this.body);
-            $(this.body).set_attribute(C$.controller_name,this.dialog.dialog_controller.object.class_name);
-            $(this.body).set_attribute(C$.controller_object_name,'dialog body');
-            this.element = this.body
+//            $(this.body).set_attribute(C$.controller_name,this.dialog.dialog_controller.object.class_name);
+//            $(this.body).set_attribute(C$.controller_object_name,'dialog body');
+            this.element = this.body;
             this.bind_events();
         },
         set_content: function(content) {
             this.body.innerHTML = content;
-            C$.bind(this.body);
+//            C$.bind(this.body);
         },
         render: function() {
             this.body.innerHTML = this.dialog.content;
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogResize','CreasetophController').prototype = {
+    C$.classify('CreasetophDialogResize','CreasetophController', {
         cursor: false,
         hover_size: 3,
         edge_size: 5,
@@ -711,18 +713,18 @@
         },
         onMouseMove: function(e) {
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogClick','CreasetophDialogController').prototype = {
+    C$.classify('CreasetophDialogClick','CreasetophDialogController',{
         Events: {
             'click' : 'onClick'
         },
         onClick: function(e) {
             this.open_dialog(e);
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogHover','CreasetophDialogController').prototype = {
+    C$.classify('CreasetophDialogHover','CreasetophDialogController',{
         Events: {
             'mouseover' : 'onMouseOver',
             'mouseout'  : 'onMouseOut'
@@ -737,9 +739,9 @@
             this.unbind_events(this.element);
             this.element.style.cursor = 'default';
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogCustom','CreasetophDialogController').prototype = {
+    C$.classify('CreasetophDialogCustom','CreasetophDialogController',{
         Events: {},
         open: function(e) {
             this.open_dialog(e);
@@ -747,18 +749,18 @@
         close: function() {
             this.close_dialog();
         }
-    };
+    });
 
-    C$.inherit('CreasetophDialogMoveable','CreasetophDialogClick').prototype = {
+    C$.classify('CreasetophDialogMoveable','CreasetophDialogClick',{
         dynamic_events              : true,
         dialog_height               : 200,
         dialog_width                : 200,
         dialog_custom_base_class    : '',
         dialog_center               : false,
         dialog_show_header          : true
-    };
+    });
 
-    C$.inherit('CreasetophDialogAlert','CreasetophDialogCustom').prototype = {
+    C$.classify('CreasetophDialogAlert','CreasetophDialogCustom',{
         dynamic_events              : true,
         dialog_height               : 19,
         dialog_width                : 220,
@@ -770,9 +772,9 @@
         dialog_mask                 : true,
         dialog_header_text          : 'Loading...',
         dialog_content              : "<img src='../images/loading15.gif' />"
-    };
+    });
 
-    C$.inherit('CreasetophDialogStatic','CreasetophDialogHover').prototype = {
+    C$.classify('CreasetophDialogStatic','CreasetophDialogHover',{
         cursor                      : 'help',
         dialog_height               : 50,
         dialog_width                : 200,
@@ -783,9 +785,9 @@
         dialog_no_overflow          : true,
         dialog_offset_top           : 20,
         dialog_offset_left          : 0
-    };
+    });
 
-    C$.inherit('CreasetophDialogMinimizeable','CreasetophDialogClick').prototype = {
+    C$.classify('CreasetophDialogMinimizeable','CreasetophDialogClick',{
         dynamic_events              : true,
         dialog_height               : 0,
         dialog_width                : '',
@@ -799,10 +801,6 @@
         onClick: function(e) {
             this.open_dialog(e);
         }
-    };
+    });
     
-    C$.inherit('CreasetophDialogManager','CreasetophController').prototype = {
-
-    };
-
 })();

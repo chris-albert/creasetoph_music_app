@@ -21,7 +21,10 @@ class IndexController extends BaseController{
             'js/SideBarController.js',
             'js/SideBarItem.js',
             'js/ExplorerController.js',
-            'js/ExplorerItem.js'
+            'js/ExplorerItem.js',
+            'js/Dialog.js',
+            'js/Forms.js',
+            'js/Slider.js'
         ),'js',true,true);
     }
 	

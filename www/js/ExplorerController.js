@@ -8,9 +8,14 @@
             this.data = null;
             this.attach_event('on' + this.class_name + 'SetExplorer',function(name,data) {
                 this.set_content(name,data);
+                this.set_title(name);
             },this);
             var scroll_bar = C$.Class('ScrollBar');
             scroll_bar = new scroll_bar(this.element.parentNode.parentNode,this.modified_event);
+            this.title_element = $(".status_bar_title",this.element.get_parent(".explorer_content_container"))[0];
+        },
+        set_title: function(title) {
+            this.title_element.set(title);
         },
         set_content: function(name,data) {
             this.clear_element();
@@ -60,6 +65,7 @@
         id           : 'playlist_explorer',
         explorer_item: 'PlaylistExplorerItem',
         modified_event: 'onPlaylistModify',
+        title_element: null,
         init: function(parent) {
             this._super(parent);
             this.attach_event('onPlaylistAdd',function(data) {

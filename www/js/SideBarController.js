@@ -58,7 +58,9 @@
         id: 'playlist_side_bar',
         explorer: 'PlaylistController',
         config_field: 'playlists',
+        now_playing: null,
         playlists: null,
+        playlist_create_button: null,
         init: function(parent) {
             this._super(parent);
             this.attach_event('onExplorerItemAddClicked',function(data) {
@@ -68,6 +70,7 @@
                 this.fire_event('onPlaylistClear',this.selected_item);
                 this.set_explorer(this.selected_item);
                 this.on_playlist_add(data);
+                this.now_playing = this.selected_item;
                 this.fire_event('onPlaylistPlay',0,this.selected_item);
             },this);
             this.attach_event('onPlaylistClear',function(name) {
@@ -76,13 +79,25 @@
             this.attach_event('onConfigFetch',function(config) {
                 this.set_explorer(config.playlist);
             },this);
+            this.attach_event('onPlaylistCreate',function(name) {
+                this.create_playlist(name);
+            },this);
+            this.attach_event('onPlaylistItemClick',function(index,name) {
+                this.now_playing = name;
+            },this);
+            $($('.small_add_button',this.element.get_parent('.explorer_side_bar_container'))[0]).event('click',function(e) {
+                this.playlist_create_clicked(e);
+            },this);
         },
         build_list: function() {
             this.playlists = this.get_governor_config();
-            this.playlists['Now Playing'] = [];
             var items = C$.foreach(this.playlists,function(name,value) {
                 return name;
-            },this);
+            },this),
+                self = this;
+            this.add_list_item('Now Playing').name_func = function() {
+                return self.now_playing;
+            };
             this._super(items);
         },
         set_explorer: function(name) {
@@ -152,6 +167,22 @@
             if(typeof this.playlists[name] !== 'undefined') {
                 this.playlists[name] = [];
             }
+        },
+        playlist_create_clicked: function() {
+            var dialog = C$.Class('DialogQuestion'),
+                self = this;
+            dialog = new dialog();
+            dialog.submit_callback(function(value) {
+                self.fire_event('onPlaylistCreate',value);
+            });
+        },
+        create_playlist: function(name) {
+            C$.foreach(this.children,function(i,child) {
+                if(child.name === 'Playlists') {
+                    child.add_list_item(name);
+                }
+            },this);
+            this.playlists[name] = [];
         }
     });
 })();

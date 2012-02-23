@@ -51,7 +51,7 @@
                 </div>
                 <div class="explorer_content_container box-flex-1 vbox">
                     <div class="status_bar status_bar_center hbox">
-                        <div class="status_bar_title hbox box-align-center">Test</div>
+                        <div class="status_bar_title hbox box-align-center"></div>
                     </div>
                     <div class="explorer_content box-flex hbox scroll_content_container">
                         <div class="explorer_content_inner box-flex-1 scroll_content" id="library_explorer"></div>
@@ -63,7 +63,9 @@
             </div>
             <div class="explorer_right_container hbox box-flex-1">
                 <div class="explorer_content_container  box-flex-1 vbox">
-                    <div class="status_bar status_bar_center"></div>
+                    <div class="status_bar status_bar_center hbox">
+                        <div class="status_bar_title hbox box-align-center"></div>
+                    </div>
                     <div class="explorer_content box-flex hbox scroll_content_container">
                         <div class="explorer_content_inner box-flex-1 scroll_content" id="playlist_explorer"></div>
                         <div class="explorer_scroll_container scroll_bar_container">
@@ -72,7 +74,14 @@
                     </div>
                 </div>
                 <div class="explorer_side_bar_container vbox">
-                    <div class="status_bar status_bar_right"></div>
+                    <div class="status_bar status_bar_right hbox box-pack-end">
+                        <div class="playlist_add hbox box-flex-0 box-align-center">
+                            <div class="small_add_button">
+                                <div class="small_add_vert"></div>
+                                <div class="small_add_horiz"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="explorer_side_bar box-flex"  id="playlist_side_bar"></div>
                 </div>
             </div>

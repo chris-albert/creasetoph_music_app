@@ -210,7 +210,6 @@
             ].join(' - ');
         },
         item_click: function() {
-            debugger;
             this.fire_event('onPlaylistItemClick',this.name,this.parent.name);
         }
     });

@@ -64,7 +64,11 @@
             this.fire_event('onSideBarItemSetExplorer',this.name);
             while(typeof obj.parent !== 'undefined') {
                 if(obj.parent.parent_class === 'SideBarController') {
-                    obj.parent.set_explorer(this.name);
+                    var name = this.name;
+                    if(typeof this.name_func === 'function') {
+                        name = this.name_func();
+                    }
+                    obj.parent.set_explorer(name);
                     break;
                 }
                 obj = obj.parent;

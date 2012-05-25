@@ -68,7 +68,7 @@ package {
             this.setup_output();
             this.add_javascript_callbacks();
             this.set_javascript_ns(this.loaderInfo.parameters.js_namespace);
-            this.show_debug = this.loaderInfo.parameters.debug == "true";
+            this.show_debug = this.loaderInfo.parameters.debug;
             this.debug(this.loaderInfo.parameters.debug);
             this.custom_event('loaded');
         }
@@ -122,6 +122,7 @@ package {
         }
 
         private function add_javascript_callbacks() {
+            this.debug('in add callbacks');
             for(var name:String in this.javascript_callbacks) {
                 ExternalInterface.addCallback(name,this[this.javascript_callbacks[name]]);
             }
@@ -152,10 +153,8 @@ package {
                         break;
                     case 'update':
                         params = {
-                            position   : this.get_position(),
-                            duration   : this.get_length(),
-                            bytesLoaded: this.get_bytes_loaded(),
-                            bytesTotal : this.get_bytes_total()
+                            position: this.get_position(),
+                            duration: this.get_length()
                         };
                         break;
                     default:

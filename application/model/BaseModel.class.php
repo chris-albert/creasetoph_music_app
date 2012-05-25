@@ -1,6 +1,6 @@
 <?php 
 
-require_once('../application/objects/MySql.class.php');
+//require_once('../application/objects/MySql.class.php');
 class BaseModel {
 	
     protected $_registry;
@@ -8,7 +8,7 @@ class BaseModel {
 
     public function __construct(&$registry) {
         $this->_registry = $registry;
-        $this->_conn = MySql::get($this->_registry);
+        //$this->_conn = MySql::get($this->_registry);
     }
 
     public function select($columns,$table_name,Array $where = array(),$extras = '') {

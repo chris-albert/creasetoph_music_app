@@ -15,19 +15,19 @@ class MySql {
     }
 
     private function __construct(&$registry) {
-        $this->_registry = $registry;
-        $this->mysqldate = date('Y-m-d H:i:s');
-        $this->ip = $_SERVER['REMOTE_ADDR'];
-        $this->_dbConnection = new mysqli(
-            $this->_registry->ini['database_settings']['servername'],
-            $this->_registry->ini['database_settings']['username'],
-            $this->_registry->ini['database_settings']['password'],
-            $this->_registry->ini['database_settings']['database']
-        );
-        if(mysqli_connect_errno()) {
-            $this->mysqlErrorLog($this->_dbConnection->error(),__FUNCTION__);
-            return FALSE;
-        }
+        //$this->_registry = $registry;
+        //$this->mysqldate = date('Y-m-d H:i:s');
+        //$this->ip = $_SERVER['REMOTE_ADDR'];
+        //$this->_dbConnection = new mysqli(
+        //    $this->_registry->ini['database_settings']['servername'],
+        //    $this->_registry->ini['database_settings']['username'],
+        //    $this->_registry->ini['database_settings']['password'],
+        //    $this->_registry->ini['database_settings']['database']
+        //);
+        //if(mysqli_connect_errno()) {
+        //    $this->mysqlErrorLog($this->_dbConnection->error(),__FUNCTION__);
+        //    return FALSE;
+        //}
     }
 
     public function query($sql) {

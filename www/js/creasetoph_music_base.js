@@ -109,7 +109,7 @@
 
     C$.classify('SoundController','EventDelegator',{
         Sound: null,
-        base_sound_url: "http://musicwebserver/music/stream",
+        base_sound_url: "http://music.creasetoph.com:1338/music/stream",
         playing: false,
         paused: false,
         init: function(parent) {
@@ -278,7 +278,7 @@
     });
     
     C$.classify('MusicGovernor','EventDelegator',{
-        config_url: "http://musicwebserver/music/fetch",
+        config_url: "http://music.creasetoph.com/music/fetch",
         config: null,
         defaults: {
             playlist: 'awesome',
